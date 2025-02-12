@@ -11,7 +11,12 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import action
 import openpyxl
 import os
+import random
+import string
 from django.conf import settings
+
+def generate_random_id(length=7):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 class FormViewSet(viewsets.ModelViewSet):
     queryset = Form.objects.all()
@@ -30,16 +35,29 @@ class FormViewSet(viewsets.ModelViewSet):
         survey_ws = wb.active
         survey_ws.title = 'survey'
         settings_ws = wb.create_sheet(title='settings')
+        choices_ws = wb.create_sheet(title='choices')
 
         # Add headers to the survey sheet
-        survey_ws.append(['type', 'name', 'label'])
+        survey_ws.append(['type', 'name', 'label', 'required'])
+
+        # Add headers to the choices sheet
+        choices_ws.append(['list_name', 'name', 'label'])
 
         # Add questions to the survey sheet
         for question in questions:
             question_type = question.get('type', 'text')  # Default to 'text' if type is not provided
             question_name = question.get('name', '')
             question_label = question.get('label', '')
-            survey_ws.append([question_type, question_name, question_label])
+            question_required = question.get('required', False)
+
+            if question_type == 'select_one':
+                list_id = generate_random_id()
+                question_type = f'select_one {list_id}'
+                options = question.get('options', [])
+                for idx, option in enumerate(options):
+                    choices_ws.append([list_id, f'option_{idx + 1}', option])
+
+            survey_ws.append([question_type, question_name, question_label, question_required])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')

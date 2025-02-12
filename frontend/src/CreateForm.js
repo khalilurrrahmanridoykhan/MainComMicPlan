@@ -8,7 +8,7 @@ const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state;
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '' }]);  // Initialize with one empty question
+  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: [''] }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
 
@@ -25,7 +25,19 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { type: 'text', name: '', label: '' }]);
+    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: [''] }]);
+  };
+
+  const handleAddOption = (questionIndex) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options.push('');
+    setQuestions(newQuestions);
+  };
+
+  const handleOptionChange = (questionIndex, optionIndex, value) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options[optionIndex] = value;
+    setQuestions(newQuestions);
   };
 
   const handleSubmit = async (e) => {
@@ -54,6 +66,12 @@ const CreateForm = () => {
     setShowModal(false);
   };
 
+  const handleRequiredChange = (index) => {
+    const newQuestions = [...questions];
+    newQuestions[index].required = !newQuestions[index].required;
+    setQuestions(newQuestions);
+  };
+
   return (
     <div className="container mt-5">
       <h2>Create Form</h2>
@@ -76,11 +94,37 @@ const CreateForm = () => {
               />
               <input
                 type="text"
-                className="form-control"
+                className="form-control mb-2"
                 value={`${question.name} | ${question.label}`}
                 onChange={(e) => handleQuestionChange(index, 'nameLabel', e.target.value)}
                 placeholder={`Name | Label for Question ${index + 1}`}
               />
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={question.required}
+                  onChange={() => handleRequiredChange(index)}
+                />
+                <label className="form-check-label">Required</label>
+              </div>
+              {question.type.startsWith('select_one') && (
+                <div className="mb-3">
+                  <label className="form-label">Options:</label>
+                  {question.options.map((option, optionIndex) => (
+                    <div key={optionIndex} className="mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={option}
+                        onChange={(e) => handleOptionChange(index, optionIndex, e.target.value)}
+                        placeholder={`Option ${optionIndex + 1}`}
+                      />
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
+                </div>
+              )}
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
@@ -100,7 +144,9 @@ const CreateForm = () => {
               'text',
               'integer',
               'date',
-              'geopoint'
+              'geopoint',
+              'decimal',
+              'select_multiple'
             ].map((type) => (
               <li key={type} className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
                 {type}
