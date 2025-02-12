@@ -5,15 +5,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const CreateProject = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [summary, setSummary] = useState('');
-  const [form, setForm] = useState('');
-  const [data, setData] = useState('');
-  const [settings, setSettings] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createProject({ name, description, summary, form, data, settings });
+      await createProject({ name, description });
       alert('Project created successfully');
     } catch (error) {
       console.error('Error creating project:', error);
@@ -31,22 +27,6 @@ const CreateProject = () => {
         <div className="mb-3">
           <label className="form-label">Description:</label>
           <textarea className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Summary:</label>
-          <textarea className="form-control" value={summary} onChange={(e) => setSummary(e.target.value)} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Form:</label>
-          <textarea className="form-control" value={form} onChange={(e) => setForm(e.target.value)} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Data:</label>
-          <textarea className="form-control" value={data} onChange={(e) => setData(e.target.value)} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Settings:</label>
-          <textarea className="form-control" value={settings} onChange={(e) => setSettings(e.target.value)} />
         </div>
         <button type="submit" className="btn btn-primary">Create Project</button>
       </form>

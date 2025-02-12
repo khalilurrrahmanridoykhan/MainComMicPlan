@@ -18,7 +18,7 @@ const Login = ({ setAuthToken }) => {
       const token = response.data.token;
       sessionStorage.setItem('authToken', token);
       setAuthToken(token);
-      navigate('/admin');
+      navigate('/dashboard');
     } catch (err) {
       setError('Invalid credentials');
     }

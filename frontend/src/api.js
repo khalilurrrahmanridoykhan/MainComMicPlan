@@ -19,3 +19,6 @@ export const fetchForms = () => API.get('forms/');
 export const submitForm = (data) => API.post('submissions/', data);
 export const fetchProjects = () => API.get('projects/');
 export const createProject = (data) => API.post('projects/', data);
+export const deleteProject = (projectId) => API.delete(`projects/${projectId}/`);
+export const fetchProject = (projectId) => API.get(`projects/${projectId}/`);
+export const updateProject = (projectId, data) => API.put(`projects/${projectId}/`, data);
