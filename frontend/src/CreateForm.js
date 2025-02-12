@@ -2,36 +2,56 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Modal, Button } from 'react-bootstrap';
 
 const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state;
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState(['']);  // Initialize with one empty question
+  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '' }]);  // Initialize with one empty question
+  const [showModal, setShowModal] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
 
-  const handleQuestionChange = (index, value) => {
+  const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
-    newQuestions[index] = value;
+    if (field === 'nameLabel') {
+      const [name, label] = value.split('|');  // Split the input value into name and label
+      newQuestions[index]['name'] = name.trim();
+      newQuestions[index]['label'] = label.trim();
+    } else {
+      newQuestions[index][field] = value;
+    }
     setQuestions(newQuestions);
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, '']);
+    setQuestions([...questions, { type: 'text', name: '', label: '' }]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = sessionStorage.getItem('authToken');
-      await axios.post(`http://localhost:8000/api/projects/${projectId}/create_form/`, { name, questions }, {
+      const response = await axios.post(`http://localhost:8000/api/projects/${projectId}/create_form/`, { name, questions }, {
         headers: {
           'Authorization': `Token ${token}`
         }
       });
       alert('Form created and files generated successfully');
+      console.log('File URL:', response.data.file_url);  // Log the file URL
     } catch (error) {
       console.error('Error creating form:', error);
     }
+  };
+
+  const handleShowModal = (index) => {
+    setCurrentQuestionIndex(index);
+    setShowModal(true);
+  };
+
+  const handleSelectType = (type) => {
+    handleQuestionChange(currentQuestionIndex, 'type', type);
+    setShowModal(false);
   };
 
   return (
@@ -48,10 +68,18 @@ const CreateForm = () => {
             <div key={index} className="mb-2">
               <input
                 type="text"
+                className="form-control mb-2"
+                value={question.type}
+                onClick={() => handleShowModal(index)}
+                placeholder={`Type for Question ${index + 1}`}
+                readOnly
+              />
+              <input
+                type="text"
                 className="form-control"
-                value={question}
-                onChange={(e) => handleQuestionChange(index, e.target.value)}
-                placeholder={`Question ${index + 1}`}
+                value={`${question.name} | ${question.label}`}
+                onChange={(e) => handleQuestionChange(index, 'nameLabel', e.target.value)}
+                placeholder={`Name | Label for Question ${index + 1}`}
               />
             </div>
           ))}
@@ -59,6 +87,33 @@ const CreateForm = () => {
         </div>
         <button type="submit" className="btn btn-primary">Create Form</button>
       </form>
+
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Select Question Type</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ul className="list-group">
+            {[
+              'audit',
+              'select_one',
+              'text',
+              'integer',
+              'date',
+              'geopoint'
+            ].map((type) => (
+              <li key={type} className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
+                {type}
+              </li>
+            ))}
+          </ul>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

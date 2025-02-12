@@ -25,21 +25,21 @@ class FormViewSet(viewsets.ModelViewSet):
         questions = request.data.get('questions', [])  # Get questions from the request data
         form = Form.objects.create(project=project, name=form_name)
 
-        # Load the XLSX template
-        template_path = os.path.join(settings.MEDIA_ROOT, 'template/commicplan_form_template.xlsx')
-        if not os.path.exists(template_path):
-            return Response({'error': 'Template file not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Create a new workbook and add the survey and settings sheets
+        wb = openpyxl.Workbook()
+        survey_ws = wb.active
+        survey_ws.title = 'survey'
+        settings_ws = wb.create_sheet(title='settings')
 
-        wb = openpyxl.load_workbook(template_path)
-        ws = wb.active
+        # Add headers to the survey sheet
+        survey_ws.append(['type', 'name', 'label'])
 
-        # Update the template with form data
-        ws['A1'] = form.name  # Example of updating a cell
-
-        # Add questions to the template
-        start_row = 2  # Starting row for questions
-        for idx, question in enumerate(questions, start=start_row):
-            ws[f'A{idx}'] = question
+        # Add questions to the survey sheet
+        for question in questions:
+            question_type = question.get('type', 'text')  # Default to 'text' if type is not provided
+            question_name = question.get('name', '')
+            question_label = question.get('label', '')
+            survey_ws.append([question_type, question_name, question_label])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')
@@ -47,12 +47,7 @@ class FormViewSet(viewsets.ModelViewSet):
         output_path = os.path.join(output_dir, f'{form.name}.xlsx')
         wb.save(output_path)
 
-        # Create additional files for the form
-        extra_file_path = os.path.join(output_dir, f'{form.name}_extra.txt')
-        with open(extra_file_path, 'w') as f:
-            f.write('Extra file content')
-
-        return Response({'message': 'Form created and files generated successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Form created and files generated successfully', 'file_url': request.build_absolute_uri(output_path)}, status=status.HTTP_201_CREATED)
 
 class SubmissionViewSet(viewsets.ModelViewSet):
     queryset = Submission.objects.all()
@@ -69,6 +64,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def forms(self, request, pk=None):
+        project = self.get_object()
+        forms = Form.objects.filter(project=project)
+        serializer = FormSerializer(forms, many=True)
+        return Response(serializer.data)
 
 class CustomAuthToken(APIView):
     permission_classes = [AllowAny]

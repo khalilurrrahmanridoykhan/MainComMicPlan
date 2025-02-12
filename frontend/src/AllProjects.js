@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProjects, deleteProject } from './api';
+import { fetchProjects, deleteProject, fetchForms } from './api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 
 const AllProjects = () => {
   const [projects, setProjects] = useState([]);
+  const [forms, setForms] = useState({});
+  const [activeProjectId, setActiveProjectId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +48,22 @@ const AllProjects = () => {
     navigate(`/projects/${projectId}/create_form`, { state: { projectId } });
   };
 
+  const handleViewForms = async (projectId) => {
+    console.log('Fetching forms for project with ID:', projectId); // Debugging line
+    try {
+      const response = await fetchForms(projectId);
+      setForms((prevForms) => ({ ...prevForms, [projectId]: response.data }));
+      setActiveProjectId(projectId); // Set the active project ID to show forms
+    } catch (error) {
+      console.error('Error fetching forms:', error);
+    }
+  };
+
+  const handleOpenFormInEnketo = (fileUrl) => {
+    const enketoUrl = `https://enketo.example.com/preview?form=${encodeURIComponent(fileUrl)}`;
+    window.open(enketoUrl, '_blank');
+  };
+
   return (
     <div>
       <h2>All Projects</h2>
@@ -57,6 +75,21 @@ const AllProjects = () => {
                 {project.name}
               </h3>
               <p>{project.description}</p>
+              <button className="btn btn-link" onClick={() => handleViewForms(project.id)}>View Forms</button>
+              {activeProjectId === project.id && forms[project.id] && (
+                <ul>
+                  {forms[project.id].map((form) => (
+                    <li key={form.id}>
+                      <span
+                        style={{ cursor: 'pointer', color: 'blue' }}
+                        onClick={() => handleOpenFormInEnketo(form.file_url)}
+                      >
+                        {form.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div>
               <FontAwesomeIcon
