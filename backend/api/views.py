@@ -50,9 +50,9 @@ class FormViewSet(viewsets.ModelViewSet):
             question_label = question.get('label', '')
             question_required = question.get('required', False)
 
-            if question_type == 'select_one':
+            if question_type in ['select_one', 'select_multiple']:
                 list_id = generate_random_id()
-                question_type = f'select_one {list_id}'
+                question_type = f'{question_type} {list_id}'
                 options = question.get('options', [])
                 for idx, option in enumerate(options):
                     choices_ws.append([list_id, f'option_{idx + 1}', option])

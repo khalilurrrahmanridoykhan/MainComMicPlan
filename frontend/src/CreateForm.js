@@ -108,7 +108,7 @@ const CreateForm = () => {
                 />
                 <label className="form-check-label">Required</label>
               </div>
-              {question.type.startsWith('select_one') && (
+              {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
                 <div className="mb-3">
                   <label className="form-label">Options:</label>
                   {question.options.map((option, optionIndex) => (
@@ -144,6 +144,8 @@ const CreateForm = () => {
               'text',
               'integer',
               'date',
+              'time',
+              'datetime',
               'geopoint',
               'decimal',
               'select_multiple'
