@@ -14,10 +14,11 @@ const CreateForm = () => {
 
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
-    if (field === 'nameLabel') {
-      const [name, label] = value.split('|');  // Split the input value into name and label
-      newQuestions[index]['name'] = name.trim();
-      newQuestions[index]['label'] = label.trim();
+    if (field === 'label') {
+      const label = value;
+      const name = label.toLowerCase().replace(/\s+/g, '_');
+      newQuestions[index]['label'] = label;
+      newQuestions[index]['name'] = name;
     } else {
       newQuestions[index][field] = value;
     }
@@ -56,10 +57,11 @@ const CreateForm = () => {
 
   const handleSubQuestionChange = (questionIndex, subQuestionIndex, field, value) => {
     const newQuestions = [...questions];
-    if (field === 'nameLabel') {
-      const [name, label] = value.split('|');  // Split the input value into name and label
-      newQuestions[questionIndex].subQuestions[subQuestionIndex]['name'] = name.trim();
-      newQuestions[questionIndex].subQuestions[subQuestionIndex]['label'] = label.trim();
+    if (field === 'label') {
+      const label = value;
+      const name = label.toLowerCase().replace(/\s+/g, '_');
+      newQuestions[questionIndex].subQuestions[subQuestionIndex]['label'] = label;
+      newQuestions[questionIndex].subQuestions[subQuestionIndex]['name'] = name;
     } else {
       newQuestions[questionIndex].subQuestions[subQuestionIndex][field] = value;
     }
@@ -158,9 +160,9 @@ const CreateForm = () => {
               <input
                 type="text"
                 className="form-control mb-2"
-                value={`${question.name} | ${question.label}`}
-                onChange={(e) => handleQuestionChange(index, 'nameLabel', e.target.value)}
-                placeholder={`Name | Label for Question ${index + 1}`}
+                value={question.label}
+                onChange={(e) => handleQuestionChange(index, 'label', e.target.value)}
+                placeholder={`Label for Question ${index + 1}`}
               />
               <div className="form-check">
                 <input
@@ -215,9 +217,9 @@ const CreateForm = () => {
                       <input
                         type="text"
                         className="form-control mb-2"
-                        value={`${subQuestion.name} | ${subQuestion.label}`}
-                        onChange={(e) => handleSubQuestionChange(index, subIndex, 'nameLabel', e.target.value)}
-                        placeholder={`Name | Label for Sub-Question ${subIndex + 1}`}
+                        value={subQuestion.label}
+                        onChange={(e) => handleSubQuestionChange(index, subIndex, 'label', e.target.value)}
+                        placeholder={`Label for Sub-Question ${subIndex + 1}`}
                       />
                       <div className="form-check">
                         <input

@@ -30,13 +30,12 @@ class FormViewSet(viewsets.ModelViewSet):
         questions = request.data.get('questions', [])  # Get questions from the request data
         form = Form.objects.create(project=project, name=form_name)
 
-        # Create a new workbook and add the survey, settings, and appearance sheets
+        # Create a new workbook and add the survey and settings sheets
         wb = openpyxl.Workbook()
         survey_ws = wb.active
         survey_ws.title = 'survey'
         settings_ws = wb.create_sheet(title='settings')
         choices_ws = wb.create_sheet(title='choices')
-        appearance_ws = wb.create_sheet(title='appearance')
 
         # Add headers to the survey sheet
         survey_ws.append(['type', 'name', 'label', 'required', 'appearance'])
@@ -58,9 +57,12 @@ class FormViewSet(viewsets.ModelViewSet):
                 # Add begin_group row
                 survey_ws.append(['begin_group', question_name, '', '', 'field-list'])
 
+                # Add first select_one row with name <user added name>_header
+                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label'])
+
                 # Add sub-questions
                 for sub_question in question.get('subQuestions', []):
-                    survey_ws.append([sub_question['type'], sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance']])
+                    survey_ws.append([f'select_one {list_id}', sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance']])
 
                 # Add end_group row
                 survey_ws.append(['end_group', '', '', '', ''])
