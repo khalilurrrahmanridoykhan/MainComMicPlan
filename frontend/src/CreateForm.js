@@ -8,7 +8,7 @@ const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state;
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: [''] }]);  // Initialize with one empty question
+  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [] }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
 
@@ -25,7 +25,7 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: [''] }]);
+    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [] }]);
   };
 
   const handleAddOption = (questionIndex) => {
@@ -37,6 +37,50 @@ const CreateForm = () => {
   const handleOptionChange = (questionIndex, optionIndex, value) => {
     const newQuestions = [...questions];
     newQuestions[questionIndex].options[optionIndex] = value;
+    setQuestions(newQuestions);
+  };
+
+  const handleAddSubQuestion = (questionIndex) => {
+    const newQuestions = [...questions];
+    const list_id = newQuestions[questionIndex].list_id;
+    newQuestions[questionIndex].subQuestions.push({
+      type: `select_one ${list_id}`,
+      name: newQuestions[questionIndex].name,
+      label: '',
+      required: false,
+      appearance: 'list-nolabel',
+      options: [...newQuestions[questionIndex].options]  // Use the same options for sub-questions
+    });
+    setQuestions(newQuestions);
+  };
+
+  const handleSubQuestionChange = (questionIndex, subQuestionIndex, field, value) => {
+    const newQuestions = [...questions];
+    if (field === 'nameLabel') {
+      const [name, label] = value.split('|');  // Split the input value into name and label
+      newQuestions[questionIndex].subQuestions[subQuestionIndex]['name'] = name.trim();
+      newQuestions[questionIndex].subQuestions[subQuestionIndex]['label'] = label.trim();
+    } else {
+      newQuestions[questionIndex].subQuestions[subQuestionIndex][field] = value;
+    }
+    setQuestions(newQuestions);
+  };
+
+  const handleSubOptionChange = (questionIndex, optionIndex, value) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options[optionIndex] = value;
+    newQuestions[questionIndex].subQuestions.forEach(subQuestion => {
+      subQuestion.options[optionIndex] = value;
+    });
+    setQuestions(newQuestions);
+  };
+
+  const handleAddSubOption = (questionIndex) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options.push('');
+    newQuestions[questionIndex].subQuestions.forEach(subQuestion => {
+      subQuestion.options.push('');
+    });
     setQuestions(newQuestions);
   };
 
@@ -62,7 +106,22 @@ const CreateForm = () => {
   };
 
   const handleSelectType = (type) => {
-    handleQuestionChange(currentQuestionIndex, 'type', type);
+    const newQuestions = [...questions];
+    if (type === 'rating') {
+      const list_id = generateRandomId();
+      newQuestions[currentQuestionIndex] = {
+        type: 'rating',
+        name: '',
+        label: '',
+        required: false,
+        list_id: list_id,
+        options: ['Option 1', 'Option 2'],
+        subQuestions: []
+      };
+    } else {
+      newQuestions[currentQuestionIndex].type = type;
+    }
+    setQuestions(newQuestions);
     setShowModal(false);
   };
 
@@ -70,6 +129,10 @@ const CreateForm = () => {
     const newQuestions = [...questions];
     newQuestions[index].required = !newQuestions[index].required;
     setQuestions(newQuestions);
+  };
+
+  const generateRandomId = (length = 7) => {
+    return Math.random().toString(36).substring(2, 2 + length);
   };
 
   return (
@@ -125,6 +188,51 @@ const CreateForm = () => {
                   <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
                 </div>
               )}
+              {question.type === 'rating' && (
+                <div className="mb-3">
+                  <label className="form-label">Options:</label>
+                  {question.options.map((option, optionIndex) => (
+                    <div key={optionIndex} className="mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={option}
+                        onChange={(e) => handleSubOptionChange(index, optionIndex, e.target.value)}
+                        placeholder={`Option ${optionIndex + 1}`}
+                      />
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn-secondary" onClick={() => handleAddSubOption(index)}>Add Option</button>
+                  <label className="form-label">Sub-Questions:</label>
+                  {question.subQuestions.map((subQuestion, subIndex) => (
+                    <div key={subIndex} className="mb-2">
+                      <input
+                        type="text"
+                        className="form-control mb-2"
+                        value={subQuestion.type}
+                        readOnly
+                      />
+                      <input
+                        type="text"
+                        className="form-control mb-2"
+                        value={`${subQuestion.name} | ${subQuestion.label}`}
+                        onChange={(e) => handleSubQuestionChange(index, subIndex, 'nameLabel', e.target.value)}
+                        placeholder={`Name | Label for Sub-Question ${subIndex + 1}`}
+                      />
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={subQuestion.required}
+                          onChange={() => handleRequiredChange(index)}
+                        />
+                        <label className="form-check-label">Required</label>
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn-secondary" onClick={() => handleAddSubQuestion(index)}>Add Sub-Question</button>
+                </div>
+              )}
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
@@ -148,7 +256,15 @@ const CreateForm = () => {
               'datetime',
               'geopoint',
               'decimal',
-              'select_multiple'
+              'select_multiple',
+              'image',
+              'audio',
+              'video',
+              'geotrace',
+              'note',
+              'barcode',
+              'acknowledge',
+              'rating'
             ].map((type) => (
               <li key={type} className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
                 {type}

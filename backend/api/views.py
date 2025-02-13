@@ -30,15 +30,16 @@ class FormViewSet(viewsets.ModelViewSet):
         questions = request.data.get('questions', [])  # Get questions from the request data
         form = Form.objects.create(project=project, name=form_name)
 
-        # Create a new workbook and add the survey and settings sheets
+        # Create a new workbook and add the survey, settings, and appearance sheets
         wb = openpyxl.Workbook()
         survey_ws = wb.active
         survey_ws.title = 'survey'
         settings_ws = wb.create_sheet(title='settings')
         choices_ws = wb.create_sheet(title='choices')
+        appearance_ws = wb.create_sheet(title='appearance')
 
         # Add headers to the survey sheet
-        survey_ws.append(['type', 'name', 'label', 'required'])
+        survey_ws.append(['type', 'name', 'label', 'required', 'appearance'])
 
         # Add headers to the choices sheet
         choices_ws.append(['list_name', 'name', 'label'])
@@ -50,14 +51,33 @@ class FormViewSet(viewsets.ModelViewSet):
             question_label = question.get('label', '')
             question_required = question.get('required', False)
 
-            if question_type in ['select_one', 'select_multiple']:
+            if question_type == 'rating':
+                # Generate a single list ID for all select_one questions under this rating question
                 list_id = generate_random_id()
-                question_type = f'{question_type} {list_id}'
-                options = question.get('options', [])
+
+                # Add begin_group row
+                survey_ws.append(['begin_group', question_name, '', '', 'field-list'])
+
+                # Add sub-questions
+                for sub_question in question.get('subQuestions', []):
+                    survey_ws.append([sub_question['type'], sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance']])
+
+                # Add end_group row
+                survey_ws.append(['end_group', '', '', '', ''])
+
+                # Add options to the choices sheet
+                options = question.get('options', ['Option 1', 'Option 2'])
                 for idx, option in enumerate(options):
                     choices_ws.append([list_id, f'option_{idx + 1}', option])
+            else:
+                if question_type in ['select_one', 'select_multiple']:
+                    list_id = generate_random_id()
+                    question_type = f'{question_type} {list_id}'
+                    options = question.get('options', [])
+                    for idx, option in enumerate(options):
+                        choices_ws.append([list_id, f'option_{idx + 1}', option])
 
-            survey_ws.append([question_type, question_name, question_label, question_required])
+                survey_ws.append([question_type, question_name, question_label, question_required, ''])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')
