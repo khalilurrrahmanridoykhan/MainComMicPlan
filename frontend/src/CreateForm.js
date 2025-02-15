@@ -6,7 +6,7 @@ import { Modal, Button, Row, Col } from 'react-bootstrap';
 
 const CreateForm = () => {
   const location = useLocation();
-  const { projectId } = location.state;
+  const { projectId } = location.state || {}; // Handle undefined state
   const [name, setName] = useState('');
   const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
@@ -31,6 +31,12 @@ const CreateForm = () => {
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);
+  };
+
+  const handleDeleteQuestion = (index) => {
+    const newQuestions = [...questions];
+    newQuestions.splice(index, 1);
+    setQuestions(newQuestions);
   };
 
   const handleAddOption = (questionIndex) => {
@@ -292,6 +298,7 @@ const CreateForm = () => {
                   </div>
                 </div>
               )}
+              <button type="button" className="btn btn-danger" onClick={() => handleDeleteQuestion(index)}>Delete Question</button>
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
