@@ -8,7 +8,7 @@ const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state;
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [] }]);  // Initialize with one empty question
+  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
 
@@ -19,6 +19,9 @@ const CreateForm = () => {
       const name = label.toLowerCase().replace(/\s+/g, '_');
       newQuestions[index]['label'] = label;
       newQuestions[index]['name'] = name;
+    } else if (field === 'parameters') {
+      const [start, end, step] = value.split(';').map(param => param.split('=')[1]);
+      newQuestions[index]['parameters'] = `start=${start};end=${end};step=${step}`;
     } else {
       newQuestions[index][field] = value;
     }
@@ -26,7 +29,7 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [] }]);
+    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);
   };
 
   const handleAddOption = (questionIndex) => {
@@ -119,6 +122,14 @@ const CreateForm = () => {
         list_id: list_id,
         options: ['Option 1', 'Option 2'],
         subQuestions: []
+      };
+    } else if (type === 'range') {
+      newQuestions[currentQuestionIndex] = {
+        type: 'range',
+        name: '',
+        label: '',
+        required: false,
+        parameters: 'start=0;end=10;step=1'
       };
     } else {
       newQuestions[currentQuestionIndex].type = type;
@@ -235,6 +246,38 @@ const CreateForm = () => {
                   <button type="button" className="btn btn-secondary" onClick={() => handleAddSubQuestion(index)}>Add Sub-Question</button>
                 </div>
               )}
+              {question.type === 'range' && (
+                <div className="mb-3">
+                  <label className="form-label">Parameters:</label>
+                  <div className="mb-2">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Start"
+                      value={questions[index].parameters.split(';')[0].split('=')[1]}
+                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${e.target.value};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="End"
+                      value={questions[index].parameters.split(';')[1].split('=')[1]}
+                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${e.target.value};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Step"
+                      value={questions[index].parameters.split(';')[2].split('=')[1]}
+                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${e.target.value}`)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
@@ -266,7 +309,8 @@ const CreateForm = () => {
               'note',
               'barcode',
               'acknowledge',
-              'rating'
+              'rating',
+              'range'
             ].map((type) => (
               <li key={type} className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
                 {type}
