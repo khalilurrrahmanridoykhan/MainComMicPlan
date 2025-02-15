@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal, Button, Row, Col } from 'react-bootstrap';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const CreateForm = () => {
   const location = useLocation();
@@ -167,6 +168,16 @@ const CreateForm = () => {
     return Math.random().toString(36).substring(2, 2 + length);
   };
 
+  const onDragEnd = (result) => {
+    if (!result.destination) {
+      return;
+    }
+    const reorderedQuestions = Array.from(questions);
+    const [removed] = reorderedQuestions.splice(result.source.index, 1);
+    reorderedQuestions.splice(result.destination.index, 0, removed);
+    setQuestions(reorderedQuestions);
+  };
+
   return (
     <div className="container mt-5">
       <h2>Create Form</h2>
@@ -177,130 +188,152 @@ const CreateForm = () => {
         </div>
         <div className="mb-3">
           <label className="form-label">Questions:</label>
-          {questions.map((question, index) => (
-            <div key={index} className="mb-2">
-              <input
-                type="text"
-                className="form-control mb-2"
-                value={question.type}
-                onClick={() => handleShowModal(index)}
-                placeholder={`Type for Question ${index + 1}`}
-                readOnly
-              />
-              <input
-                type="text"
-                className="form-control mb-2"
-                value={question.label}
-                onChange={(e) => handleQuestionChange(index, 'label', e.target.value)}
-                placeholder={`Label for Question ${index + 1}`}
-              />
-              {errors[index] && <p className="text-danger">{errors[index]}</p>}
-              <div className="form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={question.required}
-                  onChange={() => handleRequiredChange(index)}
-                />
-                <label className="form-check-label">Required</label>
-              </div>
-              {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
-                <div className="mb-3">
-                  <label className="form-label">Options:</label>
-                  {question.options.map((option, optionIndex) => (
-                    <div key={optionIndex} className="mb-2">
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={option}
-                        onChange={(e) => handleOptionChange(index, optionIndex, e.target.value)}
-                        placeholder={`Option ${optionIndex + 1}`}
-                      />
-                    </div>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="questions">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {questions.map((question, index) => (
+                    <Draggable key={index} draggableId={String(index)} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="mb-2"
+                          style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '4px', padding: '10px' }}
+                        >
+                          <div style={{ cursor: 'grab', backgroundColor: '#d1ecf1', padding: '5px', borderRadius: '4px' }}>
+                            <i className="fas fa-grip-vertical"></i> Drag to reorder
+                          </div>
+                          <input
+                            type="text"
+                            className="form-control mb-2"
+                            value={question.type}
+                            onClick={() => handleShowModal(index)}
+                            placeholder={`Type for Question ${index + 1}`}
+                            readOnly
+                          />
+                          <input
+                            type="text"
+                            className="form-control mb-2"
+                            value={question.label}
+                            onChange={(e) => handleQuestionChange(index, 'label', e.target.value)}
+                            placeholder={`Label for Question ${index + 1}`}
+                          />
+                          {errors[index] && <p className="text-danger">{errors[index]}</p>}
+                          <div className="form-check">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              checked={question.required}
+                              onChange={() => handleRequiredChange(index)}
+                            />
+                            <label className="form-check-label">Required</label>
+                          </div>
+                          {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
+                            <div className="mb-3">
+                              <label className="form-label">Options:</label>
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="mb-2">
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    value={option}
+                                    onChange={(e) => handleOptionChange(index, optionIndex, e.target.value)}
+                                    placeholder={`Option ${optionIndex + 1}`}
+                                  />
+                                </div>
+                              ))}
+                              <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
+                            </div>
+                          )}
+                          {question.type === 'rating' && (
+                            <div className="mb-3">
+                              <label className="form-label">Options:</label>
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="mb-2">
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    value={option}
+                                    onChange={(e) => handleSubOptionChange(index, optionIndex, e.target.value)}
+                                    placeholder={`Option ${optionIndex + 1}`}
+                                  />
+                                </div>
+                              ))}
+                              <button type="button" className="btn btn-secondary" onClick={() => handleAddSubOption(index)}>Add Option</button>
+                              <label className="form-label">Sub-Questions:</label>
+                              {question.subQuestions.map((subQuestion, subIndex) => (
+                                <div key={subIndex} className="mb-2">
+                                  <input
+                                    type="text"
+                                    className="form-control mb-2"
+                                    value={subQuestion.type}
+                                    readOnly
+                                  />
+                                  <input
+                                    type="text"
+                                    className="form-control mb-2"
+                                    value={subQuestion.label}
+                                    onChange={(e) => handleSubQuestionChange(index, subIndex, 'label', e.target.value)}
+                                    placeholder={`Label for Sub-Question ${subIndex + 1}`}
+                                  />
+                                  <div className="form-check">
+                                    <input
+                                      type="checkbox"
+                                      className="form-check-input"
+                                      checked={subQuestion.required}
+                                      onChange={() => handleRequiredChange(index)}
+                                    />
+                                    <label className="form-check-label">Required</label>
+                                  </div>
+                                </div>
+                              ))}
+                              <button type="button" className="btn btn-secondary" onClick={() => handleAddSubQuestion(index)}>Add Sub-Question</button>
+                            </div>
+                          )}
+                          {question.type === 'range' && (
+                            <div className="mb-3">
+                              <label className="form-label">Parameters:</label>
+                              <div className="mb-2">
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="Start"
+                                  value={questions[index].parameters.split(';')[0].split('=')[1]}
+                                  onChange={(e) => handleQuestionChange(index, 'parameters', `start=${e.target.value};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
+                                />
+                              </div>
+                              <div className="mb-2">
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="End"
+                                  value={questions[index].parameters.split(';')[1].split('=')[1]}
+                                  onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${e.target.value};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
+                                />
+                              </div>
+                              <div className="mb-2">
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="Step"
+                                  value={questions[index].parameters.split(';')[2].split('=')[1]}
+                                  onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${e.target.value}`)}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <button type="button" className="btn btn-danger" onClick={() => handleDeleteQuestion(index)}>Delete Question</button>
+                        </div>
+                      )}
+                    </Draggable>
                   ))}
-                  <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
+                  {provided.placeholder}
                 </div>
               )}
-              {question.type === 'rating' && (
-                <div className="mb-3">
-                  <label className="form-label">Options:</label>
-                  {question.options.map((option, optionIndex) => (
-                    <div key={optionIndex} className="mb-2">
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={option}
-                        onChange={(e) => handleSubOptionChange(index, optionIndex, e.target.value)}
-                        placeholder={`Option ${optionIndex + 1}`}
-                      />
-                    </div>
-                  ))}
-                  <button type="button" className="btn btn-secondary" onClick={() => handleAddSubOption(index)}>Add Option</button>
-                  <label className="form-label">Sub-Questions:</label>
-                  {question.subQuestions.map((subQuestion, subIndex) => (
-                    <div key={subIndex} className="mb-2">
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        value={subQuestion.type}
-                        readOnly
-                      />
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        value={subQuestion.label}
-                        onChange={(e) => handleSubQuestionChange(index, subIndex, 'label', e.target.value)}
-                        placeholder={`Label for Sub-Question ${subIndex + 1}`}
-                      />
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={subQuestion.required}
-                          onChange={() => handleRequiredChange(index)}
-                        />
-                        <label className="form-check-label">Required</label>
-                      </div>
-                    </div>
-                  ))}
-                  <button type="button" className="btn btn-secondary" onClick={() => handleAddSubQuestion(index)}>Add Sub-Question</button>
-                </div>
-              )}
-              {question.type === 'range' && (
-                <div className="mb-3">
-                  <label className="form-label">Parameters:</label>
-                  <div className="mb-2">
-                    <input
-                      type="number"
-                      className="form-control"
-                      placeholder="Start"
-                      value={questions[index].parameters.split(';')[0].split('=')[1]}
-                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${e.target.value};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <input
-                      type="number"
-                      className="form-control"
-                      placeholder="End"
-                      value={questions[index].parameters.split(';')[1].split('=')[1]}
-                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${e.target.value};step=${questions[index].parameters.split(';')[2].split('=')[1]}`)}
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <input
-                      type="number"
-                      className="form-control"
-                      placeholder="Step"
-                      value={questions[index].parameters.split(';')[2].split('=')[1]}
-                      onChange={(e) => handleQuestionChange(index, 'parameters', `start=${questions[index].parameters.split(';')[0].split('=')[1]};end=${questions[index].parameters.split(';')[1].split('=')[1]};step=${e.target.value}`)}
-                    />
-                  </div>
-                </div>
-              )}
-              <button type="button" className="btn btn-danger" onClick={() => handleDeleteQuestion(index)}>Delete Question</button>
-            </div>
-          ))}
+            </Droppable>
+          </DragDropContext>
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
         </div>
         <button type="submit" className="btn btn-primary">Create Form</button>
