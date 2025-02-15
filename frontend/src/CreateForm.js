@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Row, Col } from 'react-bootstrap';
 
 const CreateForm = () => {
   const location = useLocation();
@@ -11,6 +11,7 @@ const CreateForm = () => {
   const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
@@ -91,6 +92,18 @@ const CreateForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = {};
+    // Validate that all questions have a label
+    questions.forEach((question, index) => {
+      if (!question.label.trim()) {
+        newErrors[index] = 'Label for Question cannot be empty.';
+      }
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({}); // Clear any previous errors
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(`http://localhost:8000/api/projects/${projectId}/create_form/`, { name, questions }, {
@@ -175,6 +188,7 @@ const CreateForm = () => {
                 onChange={(e) => handleQuestionChange(index, 'label', e.target.value)}
                 placeholder={`Label for Question ${index + 1}`}
               />
+              {errors[index] && <p className="text-danger">{errors[index]}</p>}
               <div className="form-check">
                 <input
                   type="checkbox"
@@ -290,7 +304,7 @@ const CreateForm = () => {
           <Modal.Title>Select Question Type</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <ul className="list-group">
+          <Row>
             {[
               'audit',
               'select_one',
@@ -300,23 +314,26 @@ const CreateForm = () => {
               'time',
               'datetime',
               'geopoint',
+              'geotrace',
+              'geoshape',
               'decimal',
               'select_multiple',
               'image',
               'audio',
               'video',
-              'geotrace',
               'note',
               'barcode',
               'acknowledge',
               'rating',
               'range'
-            ].map((type) => (
-              <li key={type} className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
-                {type}
-              </li>
+            ].map((type, index) => (
+              <Col key={type} xs={6} md={3} className="mb-2">
+                <div className="list-group-item" onClick={() => handleSelectType(type)} style={{ cursor: 'pointer' }}>
+                  {type}
+                </div>
+              </Col>
             ))}
-          </ul>
+          </Row>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
