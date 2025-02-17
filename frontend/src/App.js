@@ -9,7 +9,7 @@ import AllProjects from './AllProjects';
 import Dashboard from './Dashboard';
 import Submissions from './Submissions';
 import EditProject from './EditProject';
-import CreateForm from './CreateForm'; // Import the CreateForm component
+import CreateForm from './components/CreateForm/CreateForm';
 
 const App = () => {
   const [authToken, setAuthToken] = useState(sessionStorage.getItem('authToken'));

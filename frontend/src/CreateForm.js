@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Modal, Button, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Row, Col, Collapse, Form } from 'react-bootstrap';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state || {}; // Handle undefined state
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);  // Initialize with one empty question
+  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);  // Initialize with one empty question
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [errors, setErrors] = useState({});
+  const [openSettings, setOpenSettings] = useState({});
 
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
@@ -31,7 +32,7 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '' }]);
+    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   };
 
   const handleDeleteQuestion = (index) => {
@@ -178,6 +179,10 @@ const CreateForm = () => {
     setQuestions(reorderedQuestions);
   };
 
+  const toggleSettings = (index) => {
+    setOpenSettings((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   return (
     <div className="container mt-5">
       <h2>Create Form</h2>
@@ -230,6 +235,83 @@ const CreateForm = () => {
                             />
                             <label className="form-check-label">Required</label>
                           </div>
+                          <button type="button" className="btn btn-secondary" onClick={() => toggleSettings(index)}>Settings</button>
+                          <Collapse in={openSettings[index]}>
+                            <div className="mt-3">
+                              <div className="mb-3">
+                                <label className="form-label">Data column name:</label>
+                                <input type="text" className="form-control" value={question.name} onChange={(e) => handleQuestionChange(index, 'name', e.target.value)} />
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label">Guidance hint:</label>
+                                <input type="text" className="form-control" value={question.guidance_hint} onChange={(e) => handleQuestionChange(index, 'guidance_hint', e.target.value)} />
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label">Mandatory response:</label>
+                                <Form.Select value={question.required ? 'yes' : 'no'} onChange={(e) => handleQuestionChange(index, 'required', e.target.value === 'yes')}>
+                                  <option value="yes">Yes</option>
+                                  <option value="no">No</option>
+                                </Form.Select>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label">Default response:</label>
+                                <input type="text" className="form-control" value={question.default} onChange={(e) => handleQuestionChange(index, 'default', e.target.value)} />
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label">Appearance (advanced):</label>
+                                <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                                  {question.type === 'select_one' ? (
+                                    <>
+                                      <option value="select">Select</option>
+                                      <option value="minimal">Minimal</option>
+                                      <option value="autocomplete">Autocomplete</option>
+                                      <option value="quick">Quick</option>
+                                      <option value="horizontal-compact">Horizontal-compact</option>
+                                      <option value="horizontal">Horizontal</option>
+                                      <option value="likert">Likert</option>
+                                      <option value="compact">Compact</option>
+                                      <option value="quickcompact">Quickcompact</option>
+                                      <option value="label">Label</option>
+                                      <option value="list-nolabel">List-nolabel</option>
+                                      <option value="other">Other</option>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <option value="select">Select</option>
+                                      <option value="multiline">Multiline</option>
+                                      <option value="numbers">Numbers</option>
+                                      <option value="other">Other</option>
+                                    </>
+                                  )}
+                                </Form.Select>
+                              </div>
+                              {question.type === 'select_one' && (
+                                <>
+                                  <div className="mb-3">
+                                    <label className="form-label">Parameters:</label>
+                                    <div className="form-check">
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input"
+                                        checked={question.parameters.includes('randomize=true')}
+                                        onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${e.target.checked};seed=${question.parameters.split(';')[1]?.split('=')[1] || ''}`)}
+                                      />
+                                      <label className="form-check-label">Randomize</label>
+                                    </div>
+                                  </div>
+                                  <div className="mb-3">
+                                    <label className="form-label">Seed:</label>
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      value={question.parameters.split(';')[1]?.split('=')[1] || ''}
+                                      onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${question.parameters.includes('randomize=true')};seed=${e.target.value}`)}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </Collapse>
                           {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
                             <div className="mb-3">
                               <label className="form-label">Options:</label>
@@ -346,7 +428,6 @@ const CreateForm = () => {
         <Modal.Body>
           <Row>
             {[
-              'audit',
               'select_one',
               'text',
               'integer',

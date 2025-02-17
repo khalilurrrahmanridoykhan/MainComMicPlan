@@ -38,7 +38,7 @@ class FormViewSet(viewsets.ModelViewSet):
         choices_ws = wb.create_sheet(title='choices')
 
         # Add headers to the survey sheet
-        survey_ws.append(['type', 'name', 'label', 'required', 'appearance', 'parameters'])
+        survey_ws.append(['type', 'name', 'label', 'required', 'appearance', 'parameters', 'hint', 'default', 'guidance_hint', 'hxl'])
 
         # Add headers to the choices sheet
         choices_ws.append(['list_name', 'name', 'label'])
@@ -50,23 +50,28 @@ class FormViewSet(viewsets.ModelViewSet):
             question_label = question.get('label', '')
             question_required = question.get('required', False)
             question_parameters = question.get('parameters', '')
+            question_hint = question.get('hint', '')
+            question_default = question.get('default', '')
+            question_appearance = question.get('appearance', '')
+            question_guidance_hint = question.get('guidance_hint', '')
+            question_hxl = question.get('hxl', '')
 
             if question_type == 'rating':
                 # Generate a single list ID for all select_one questions under this rating question
                 list_id = generate_random_id()
 
                 # Add begin_group row
-                survey_ws.append(['begin_group', question_name, '', '', 'field-list', ''])
+                survey_ws.append(['begin_group', question_name, '', '', 'field-list', '', '', '', '', ''])
 
                 # Add first select_one row with name <user added name>_header
-                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label', ''])
+                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label', '', '', '', '', ''])
 
                 # Add sub-questions
                 for sub_question in question.get('subQuestions', []):
-                    survey_ws.append([f'select_one {list_id}', sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance'], sub_question.get('parameters', '')])
+                    survey_ws.append([f'select_one {list_id}', sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance'], sub_question.get('parameters', ''), '', '', '', ''])
 
                 # Add end_group row
-                survey_ws.append(['end_group', '', '', '', '', ''])
+                survey_ws.append(['end_group', '', '', '', '', '', '', '', '', ''])
 
                 # Add options to the choices sheet
                 options = question.get('options', ['Option 1', 'Option 2'])
@@ -80,7 +85,7 @@ class FormViewSet(viewsets.ModelViewSet):
                     for idx, option in enumerate(options):
                         choices_ws.append([list_id, f'option_{idx + 1}', option])
 
-                survey_ws.append([question_type, question_name, question_label, question_required, '', question_parameters])
+                survey_ws.append([question_type, question_name, question_label, question_required, question_appearance, question_parameters, question_hint, question_default, question_guidance_hint, question_hxl])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')
