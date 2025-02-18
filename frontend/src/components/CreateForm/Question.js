@@ -51,57 +51,63 @@ const Question = ({ provided, question, index, handleQuestionChange, handleDelet
           </div>
           <div className="mb-3">
             <label className="form-label">Appearance (advanced):</label>
-            <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
-              {question.type === 'select_one' ? (
-                <>
-                  <option value="select">Select</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="autocomplete">Autocomplete</option>
-                  <option value="quick">Quick</option>
-                  <option value="horizontal-compact">Horizontal-compact</option>
-                  <option value="horizontal">Horizontal</option>
-                  <option value="likert">Likert</option>
-                  <option value="compact">Compact</option>
-                  <option value="quickcompact">Quickcompact</option>
-                  <option value="label">Label</option>
-                  <option value="list-nolabel">List-nolabel</option>
-                  <option value="other">Other</option>
-                </>
-              ) : question.type === 'select_multiple' ? (
-                <>
-                  <option value="select">Select</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="horizontal-compact">Horizontal-compact</option>
-                  <option value="horizontal">Horizontal</option>
-                  <option value="compact">Compact</option>
-                  <option value="label">Label</option>
-                  <option value="list-nolabel">List-nolabel</option>
-                  <option value="other">Other</option>
-                </>
-              ) : question.type === 'date' ? (
-                <>
-                  <option value="select">Select</option>
-                  <option value="month-year">Month-Year</option>
-                  <option value="year">Year</option>
-                  <option value="other">Other</option>
-                </>
-              ) : question.type === 'image' ? (
-                <>
-                  <option value="select">Select</option>
-                  <option value="signature">Signature</option>
-                  <option value="draw">Draw</option>
-                  <option value="annotate">Annotate</option>
-                  <option value="other">Other</option>
-                </>
-              ) : (
-                <>
-                  <option value="select">Select</option>
-                  <option value="multiline">Multiline</option>
-                  <option value="numbers">Numbers</option>
-                  <option value="other">Other</option>
-                </>
-              )}
-            </Form.Select>
+            {question.type === 'text' ? (
+              <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                <option value="select">Select</option>
+                <option value="multiline">Multiline</option>
+                <option value="numbers">Numbers</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            ) : question.type === 'select_one' ? (
+              <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                <option value="select">Select</option>
+                <option value="minimal">Minimal</option>
+                <option value="autocomplete">Autocomplete</option>
+                <option value="quick">Quick</option>
+                <option value="horizontal-compact">Horizontal-compact</option>
+                <option value="horizontal">Horizontal</option>
+                <option value="likert">Likert</option>
+                <option value="compact">Compact</option>
+                <option value="quickcompact">Quickcompact</option>
+                <option value="label">Label</option>
+                <option value="list-nolabel">List-nolabel</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            ) : question.type === 'select_multiple' ? (
+              <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                <option value="select">Select</option>
+                <option value="minimal">Minimal</option>
+                <option value="horizontal-compact">Horizontal-compact</option>
+                <option value="horizontal">Horizontal</option>
+                <option value="compact">Compact</option>
+                <option value="label">Label</option>
+                <option value="list-nolabel">List-nolabel</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            ) : question.type === 'date' ? (
+              <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                <option value="select">Select</option>
+                <option value="month-year">Month-Year</option>
+                <option value="year">Year</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            ) : question.type === 'image' ? (
+              <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
+                <option value="select">Select</option>
+                <option value="signature">Signature</option>
+                <option value="draw">Draw</option>
+                <option value="annotate">Annotate</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            ) : (
+              <input
+                type="text"
+                className="form-control"
+                value={question.appearance}
+                onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}
+                placeholder="Enter appearance"
+              />
+            )}
           </div>
           {question.type === 'image' && (
             <div className="mb-3">
@@ -141,6 +147,18 @@ const Question = ({ provided, question, index, handleQuestionChange, handleDelet
               </div>
             </>
           )}
+          {question.type === 'rating' && (
+            <div className="mb-3">
+              <label className="form-label">cmp--rank-constraint-message:</label>
+              <input
+                type="text"
+                className="form-control"
+                value={question.constraint_message || 'Items cannot be selected more than once'}
+                onChange={(e) => handleQuestionChange(index, 'constraint_message', e.target.value)}
+                placeholder="Items cannot be selected more than once"
+              />
+            </div>
+          )}
         </div>
       </Collapse>
       {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
@@ -161,7 +179,7 @@ const Question = ({ provided, question, index, handleQuestionChange, handleDelet
           <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
           <label className="form-label">Sub-Questions:</label>
           {question.subQuestions.map((subQuestion, subIndex) => (
-            <SubQuestion key={subIndex} subQuestion={subQuestion} onChange={(subIndex, field, value) => handleSubQuestionChange(index, subIndex, field, value)} onDelete={(subIndex) => handleDeleteSubQuestion(index, subIndex)} />
+            <SubQuestion key={subIndex} subQuestion={subQuestion} onChange={(subIndex, field, value) => handleSubQuestionChange(index, subIndex, field, value)} onDelete={(subIndex) => handleDeleteSubQuestion(index, subIndex)} error={errors[`${index}-${subIndex}`]} />
           ))}
           <button type="button" className="btn btn-secondary" onClick={() => handleAddSubQuestion(index)}>Add Sub-Question</button>
         </div>

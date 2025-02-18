@@ -1,4 +1,3 @@
-# backend/api/views.py
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from .models import Form, Submission, Project
@@ -17,6 +16,13 @@ from django.conf import settings
 
 def generate_random_id(length=7):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def get_ordinal_suffix(n):
+    if 10 <= n % 100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return suffix
 
 class FormViewSet(viewsets.ModelViewSet):
     queryset = Form.objects.all()
@@ -38,7 +44,7 @@ class FormViewSet(viewsets.ModelViewSet):
         choices_ws = wb.create_sheet(title='choices')
 
         # Add headers to the survey sheet
-        survey_ws.append(['type', 'name', 'label', 'required', 'appearance', 'parameters', 'hint', 'default', 'guidance_hint', 'hxl'])
+        survey_ws.append(['type', 'name', 'label', 'required', 'appearance', 'parameters', 'hint', 'default', 'guidance_hint', 'hxl', 'constraint_message', 'constraint'])
 
         # Add headers to the choices sheet
         choices_ws.append(['list_name', 'name', 'label'])
@@ -55,23 +61,40 @@ class FormViewSet(viewsets.ModelViewSet):
             question_appearance = question.get('appearance', '')
             question_guidance_hint = question.get('guidance_hint', '')
             question_hxl = question.get('hxl', '')
+            question_constraint_message = question.get('constraint_message', '')
+            question_constraint = question.get('constraint', '')
 
             if question_type == 'rating':
                 # Generate a single list ID for all select_one questions under this rating question
                 list_id = generate_random_id()
 
                 # Add begin_group row
-                survey_ws.append(['begin_group', question_name, '', '', 'field-list', '', '', '', '', ''])
+                survey_ws.append(['begin_group', question_name, '', '', 'field-list', '', '', '', '', '', '', ''])
 
                 # Add first select_one row with name <user added name>_header
-                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label', '', '', '', '', ''])
+                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label', '', '', '', '', '', question_constraint_message, question_constraint])
 
                 # Add sub-questions
                 for sub_question in question.get('subQuestions', []):
-                    survey_ws.append([f'select_one {list_id}', sub_question['name'], sub_question['label'], sub_question['required'], sub_question['appearance'], sub_question.get('parameters', ''), '', '', '', ''])
+                    sub_question_name = sub_question['name']
+                    sub_question_label = sub_question['label']
+                    sub_question_required = sub_question['required']
+                    sub_question_appearance = sub_question['appearance']
+                    sub_question_parameters = sub_question.get('parameters', '')
+                    sub_question_constraint_message = question_constraint_message
+
+                    # Generate the constraint for the sub-question
+                    sub_question_index = sub_question['index']
+                    sub_question_constraint = ''
+                    for i in range(sub_question_index):
+                        if sub_question_constraint:
+                            sub_question_constraint += ' and '
+                        sub_question_constraint += f'${{{sub_question_index + 1}{get_ordinal_suffix(sub_question_index + 1)}_choice}} != ${{{i + 1}{get_ordinal_suffix(i + 1)}_choice}}'
+
+                    survey_ws.append([f'select_one {list_id}', sub_question_name, sub_question_label, sub_question_required, sub_question_appearance, sub_question_parameters, '', '', '', '', sub_question_constraint_message, sub_question_constraint])
 
                 # Add end_group row
-                survey_ws.append(['end_group', '', '', '', '', '', '', '', '', ''])
+                survey_ws.append(['end_group', '', '', '', '', '', '', '', '', '', '', ''])
 
                 # Add options to the choices sheet
                 options = question.get('options', ['Option 1', 'Option 2'])
@@ -85,7 +108,7 @@ class FormViewSet(viewsets.ModelViewSet):
                     for idx, option in enumerate(options):
                         choices_ws.append([list_id, f'option_{idx + 1}', option])
 
-                survey_ws.append([question_type, question_name, question_label, question_required, question_appearance, question_parameters, question_hint, question_default, question_guidance_hint, question_hxl])
+                survey_ws.append([question_type, question_name, question_label, question_required, question_appearance, question_parameters, question_hint, question_default, question_guidance_hint, question_hxl, question_constraint_message, question_constraint])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SubQuestion = ({ subQuestion, onChange, onDelete }) => {
+const SubQuestion = ({ subQuestion, onChange, onDelete, error }) => {
   const handleLabelChange = (e) => {
     onChange(subQuestion.index, 'label', e.target.value);
   };
@@ -16,8 +16,9 @@ const SubQuestion = ({ subQuestion, onChange, onDelete }) => {
         className="form-control mb-2"
         value={subQuestion.label}
         onChange={handleLabelChange}
-        placeholder="Label for Sub-Question"
+        placeholder={`Label for Sub-Question ${subQuestion.index + 1}`}
       />
+      {error && <p className="text-danger">{error}</p>}
       <div className="form-check">
         <input
           type="checkbox"

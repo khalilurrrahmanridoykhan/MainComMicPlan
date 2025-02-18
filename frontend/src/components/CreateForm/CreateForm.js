@@ -20,7 +20,10 @@ const CreateForm = () => {
     const newQuestions = [...questions];
     if (field === 'label') {
       const label = value;
-      const name = label.toLowerCase().replace(/\s+/g, '_');
+      let name = label.toLowerCase().replace(/[^a-z0-9-._:]/g, '_');
+      if (!/^[a-z:_]/.test(name)) {
+        name = `_${name}`;
+      }
       newQuestions[index]['label'] = label;
       newQuestions[index]['name'] = name;
     } else if (field === 'parameters') {
@@ -62,14 +65,27 @@ const CreateForm = () => {
 
   const handleAddSubQuestion = (questionIndex) => {
     const newQuestions = [...questions];
+    const subQuestionIndex = newQuestions[questionIndex].subQuestions.length;
     const list_id = newQuestions[questionIndex].list_id;
+
+    // Generate the constraint for the new sub-question
+    let constraint = '';
+    for (let i = 0; i < subQuestionIndex; i++) {
+      if (constraint) {
+        constraint += ' and ';
+      }
+      constraint += `\${_${subQuestionIndex + 1}th_choice} != \${_${i + 1}th_choice}`;
+    }
+
     newQuestions[questionIndex].subQuestions.push({
+      index: subQuestionIndex,
       type: `select_one ${list_id}`,
-      name: newQuestions[questionIndex].name,
+      name: '',
       label: '',
       required: false,
       appearance: 'list-nolabel',
-      options: [...newQuestions[questionIndex].options]  // Use the same options for sub-questions
+      options: [],
+      constraint: constraint
     });
     setQuestions(newQuestions);
   };
@@ -78,11 +94,17 @@ const CreateForm = () => {
     const newQuestions = [...questions];
     if (field === 'label') {
       const label = value;
-      const name = label.toLowerCase().replace(/[^a-zA-Z:_\d-.]/g, '_');
-      newQuestions[questionIndex].subQuestions[subQuestionIndex]['label'] = label;
-      newQuestions[questionIndex].subQuestions[subQuestionIndex]['name'] = name;
+      const name = label.toLowerCase().replace(/\s+/g, '_');
+      newQuestions[questionIndex].subQuestions[subQuestionIndex] = {
+        ...newQuestions[questionIndex].subQuestions[subQuestionIndex],
+        label: label,
+        name: name
+      };
     } else {
-      newQuestions[questionIndex].subQuestions[subQuestionIndex][field] = value;
+      newQuestions[questionIndex].subQuestions[subQuestionIndex] = {
+        ...newQuestions[questionIndex].subQuestions[subQuestionIndex],
+        [field]: value
+      };
     }
     setQuestions(newQuestions);
   };
@@ -99,6 +121,13 @@ const CreateForm = () => {
     questions.forEach((question, index) => {
       if (!question.label.trim()) {
         newErrors[index] = 'Label for Question cannot be empty.';
+      }
+      if (question.type === 'rating') {
+        question.subQuestions.forEach((subQuestion, subIndex) => {
+          if (!subQuestion.label.trim()) {
+            newErrors[`${index}-${subIndex}`] = `Label for Sub-Question ${subIndex + 1} cannot be empty.`;
+          }
+        });
       }
     });
     if (Object.keys(newErrors).length > 0) {
@@ -149,16 +178,30 @@ const CreateForm = () => {
         label: '',
         required: false,
         list_id: list_id,
-        options: ['Option 1', 'Option 2'],
-        subQuestions: []
-      };
-    } else if (type === 'range') {
-      newQuestions[currentQuestionIndex] = {
-        type: 'range',
-        name: '',
-        label: '',
-        required: false,
-        parameters: 'start=0;end=10;step=1'
+        options: [],
+        subQuestions: [
+          {
+            index: 0,
+            type: `select_one ${list_id}`,
+            name: '',
+            label: '',
+            required: false,
+            appearance: 'list-nolabel',
+            options: [],
+            constraint: ''
+          },
+          {
+            index: 1,
+            type: `select_one ${list_id}`,
+            name: '',
+            label: '',
+            required: false,
+            appearance: 'list-nolabel',
+            options: [],
+            constraint: '${_2nd_choice} != ${_1st_choice}'
+          }
+        ],
+        constraint_message: 'Items cannot be selected more than once'
       };
     } else {
       newQuestions[currentQuestionIndex].type = type;
