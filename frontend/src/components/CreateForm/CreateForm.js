@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Question from './Question';
 import QuestionTypeModal from './QuestionTypeModal';
 
@@ -10,7 +9,7 @@ const CreateForm = () => {
   const location = useLocation();
   const { projectId } = location.state || {};
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
+  const [questions, setQuestions] = useState([{ id: '1', type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [errors, setErrors] = useState({});
@@ -42,7 +41,7 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
+    setQuestions([...questions, { id: `${questions.length + 1}`, type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   };
 
   const handleDeleteQuestion = (index) => {
@@ -118,6 +117,9 @@ const CreateForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
+    if (!name.trim()) {
+      newErrors['name'] = 'Form name cannot be empty.';
+    }
     questions.forEach((question, index) => {
       if (!question.label.trim()) {
         newErrors[index] = 'Label for Question cannot be empty.';
@@ -149,16 +151,6 @@ const CreateForm = () => {
     }
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) {
-      return;
-    }
-    const reorderedQuestions = Array.from(questions);
-    const [removed] = reorderedQuestions.splice(result.source.index, 1);
-    reorderedQuestions.splice(result.destination.index, 0, removed);
-    setQuestions(reorderedQuestions);
-  };
-
   const toggleSettings = (index) => {
     setOpenSettings((prev) => ({ ...prev, [index]: !prev[index] }));
   };
@@ -170,48 +162,9 @@ const CreateForm = () => {
 
   const handleSelectType = (type) => {
     const newQuestions = [...questions];
-    if (type === 'rating') {
-      const list_id = generateRandomId();
-      newQuestions[currentQuestionIndex] = {
-        type: 'rating',
-        name: '',
-        label: '',
-        required: false,
-        list_id: list_id,
-        options: [],
-        subQuestions: [
-          {
-            index: 0,
-            type: `select_one ${list_id}`,
-            name: '',
-            label: '',
-            required: false,
-            appearance: 'list-nolabel',
-            options: [],
-            constraint: ''
-          },
-          {
-            index: 1,
-            type: `select_one ${list_id}`,
-            name: '',
-            label: '',
-            required: false,
-            appearance: 'list-nolabel',
-            options: [],
-            constraint: '${_2nd_choice} != ${_1st_choice}'
-          }
-        ],
-        constraint_message: 'Items cannot be selected more than once'
-      };
-    } else {
-      newQuestions[currentQuestionIndex].type = type;
-    }
+    newQuestions[currentQuestionIndex].type = type;
     setQuestions(newQuestions);
     setShowModal(false);
-  };
-
-  const generateRandomId = (length = 7) => {
-    return Math.random().toString(36).substring(2, 2 + length);
   };
 
   return (
@@ -221,40 +174,28 @@ const CreateForm = () => {
         <div className="mb-3">
           <label className="form-label">Name:</label>
           <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
+          {errors['name'] && <p className="text-danger">{errors['name']}</p>}
         </div>
         <div className="mb-3">
           <label className="form-label">Questions:</label>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="questions">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {questions.map((question, index) => (
-                    <Draggable key={index} draggableId={String(index)} index={index}>
-                      {(provided) => (
-                        <Question
-                          provided={provided}
-                          question={question}
-                          index={index}
-                          handleQuestionChange={handleQuestionChange}
-                          handleDeleteQuestion={handleDeleteQuestion}
-                          toggleSettings={toggleSettings}
-                          openSettings={openSettings}
-                          handleAddOption={handleAddOption}
-                          handleOptionChange={handleOptionChange}
-                          handleAddSubQuestion={handleAddSubQuestion}
-                          handleSubQuestionChange={handleSubQuestionChange}
-                          handleDeleteSubQuestion={handleDeleteSubQuestion}
-                          handleShowModal={handleShowModal}
-                          errors={errors}
-                        />
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          {questions.map((question, index) => (
+            <Question
+              key={question.id}
+              question={question}
+              index={index}
+              handleQuestionChange={handleQuestionChange}
+              handleDeleteQuestion={handleDeleteQuestion}
+              toggleSettings={toggleSettings}
+              openSettings={openSettings}
+              handleAddOption={handleAddOption}
+              handleOptionChange={handleOptionChange}
+              handleAddSubQuestion={handleAddSubQuestion}
+              handleSubQuestionChange={handleSubQuestionChange}
+              handleDeleteSubQuestion={handleDeleteSubQuestion}
+              handleShowModal={handleShowModal}
+              errors={errors}
+            />
+          ))}
           <button type="button" className="btn btn-secondary" onClick={handleAddQuestion}>Add Question</button>
         </div>
         <button type="submit" className="btn btn-primary">Create Form</button>

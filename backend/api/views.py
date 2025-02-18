@@ -13,6 +13,7 @@ import os
 import random
 import string
 from django.conf import settings
+import re
 
 def generate_random_id(length=7):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -22,7 +23,10 @@ def get_ordinal_suffix(n):
         suffix = 'th'
     else:
         suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
-    return suffix
+    return f'_{n}{suffix}_choice'
+
+def sanitize_name(name):
+    return re.sub(r'[^a-zA-Z0-9_]', '', name)
 
 class FormViewSet(viewsets.ModelViewSet):
     queryset = Form.objects.all()
@@ -83,15 +87,27 @@ class FormViewSet(viewsets.ModelViewSet):
                     sub_question_parameters = sub_question.get('parameters', '')
                     sub_question_constraint_message = question_constraint_message
 
+                    # Ensure the sub-question name starts with an underscore if it starts with a number
+                    if sub_question_label and sub_question_label[0].isdigit():
+                        sub_question_name = f'_{sub_question_name}'
+
+                    # Sanitize the sub-question name
+                    sanitized_sub_question_name = sanitize_name(sub_question_name)
+
                     # Generate the constraint for the sub-question
                     sub_question_index = sub_question['index']
                     sub_question_constraint = ''
                     for i in range(sub_question_index):
+                        other_sub_question_name = question["subQuestions"][i]["name"]
+                        if question["subQuestions"][i]["label"][0].isdigit():
+                            other_sub_question_name = f'_{other_sub_question_name}'
+                        # Sanitize the other sub-question name
+                        sanitized_other_sub_question_name = sanitize_name(other_sub_question_name)
                         if sub_question_constraint:
                             sub_question_constraint += ' and '
-                        sub_question_constraint += f'${{{sub_question_index + 1}{get_ordinal_suffix(sub_question_index + 1)}_choice}} != ${{{i + 1}{get_ordinal_suffix(i + 1)}_choice}}'
+                        sub_question_constraint += f'${{{sanitized_sub_question_name}}} != ${{{sanitized_other_sub_question_name}}}'
 
-                    survey_ws.append([f'select_one {list_id}', sub_question_name, sub_question_label, sub_question_required, sub_question_appearance, sub_question_parameters, '', '', '', '', sub_question_constraint_message, sub_question_constraint])
+                    survey_ws.append([f'select_one {list_id}', sanitized_sub_question_name, sub_question_label, sub_question_required, sub_question_appearance, sub_question_parameters, '', '', '', '', sub_question_constraint_message, sub_question_constraint])
 
                 # Add end_group row
                 survey_ws.append(['end_group', '', '', '', '', '', '', '', '', '', '', ''])

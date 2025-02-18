@@ -1,12 +1,24 @@
 import React from 'react';
 import { Collapse, Form } from 'react-bootstrap';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Option from './Option';
 import SubQuestion from './SubQuestion';
 
-const Question = ({ provided, question, index, handleQuestionChange, handleDeleteQuestion, toggleSettings, openSettings, handleAddOption, handleOptionChange, handleAddSubQuestion, handleSubQuestionChange, handleDeleteSubQuestion, handleShowModal, errors }) => {
+const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion, toggleSettings, openSettings, handleAddOption, handleOptionChange, handleAddSubQuestion, handleSubQuestionChange, handleDeleteSubQuestion, handleShowModal, errors }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    backgroundColor: '#f8f9fa',
+    border: '1px solid #ced4da',
+    borderRadius: '4px',
+    padding: '10px',
+  };
+
   return (
-    <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-2" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '4px', padding: '10px' }}>
-      <div style={{ cursor: 'grab', backgroundColor: '#d1ecf1', padding: '5px', borderRadius: '4px' }}>
+    <div ref={setNodeRef} style={style} {...attributes} className="mb-2">
+      <div style={{ cursor: 'grab', backgroundColor: '#d1ecf1', padding: '5px', borderRadius: '4px' }} {...listeners}>
         <i className="fas fa-grip-vertical"></i> Drag to reorder
       </div>
       <input
