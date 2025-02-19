@@ -21,7 +21,8 @@ const QuestionTypeModal = ({ show, onHide, onSelectType }) => {
     'barcode',
     'acknowledge',
     'rating',
-    'range'
+    'range',
+    'file'
   ];
 
   return (

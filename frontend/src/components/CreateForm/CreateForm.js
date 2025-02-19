@@ -15,6 +15,10 @@ const CreateForm = () => {
   const [errors, setErrors] = useState({});
   const [openSettings, setOpenSettings] = useState({});
 
+  const generateRandomId = () => {
+    return Math.random().toString(36).substr(2, 9);
+  };
+
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions];
     if (field === 'label') {
@@ -73,7 +77,7 @@ const CreateForm = () => {
       if (constraint) {
         constraint += ' and ';
       }
-      constraint += `\${_${subQuestionIndex + 1}th_choice} != \${_${i + 1}th_choice}`;
+      constraint += `\${_${subQuestionIndex + 1}${getOrdinalSuffix(subQuestionIndex + 1)}_choice} != \${_${i + 1}${getOrdinalSuffix(i + 1)}_choice}`;
     }
 
     newQuestions[questionIndex].subQuestions.push({
@@ -83,7 +87,7 @@ const CreateForm = () => {
       label: '',
       required: false,
       appearance: 'list-nolabel',
-      options: [],
+      options: ['Option 1', 'Option 2'],
       constraint: constraint
     });
     setQuestions(newQuestions);
@@ -162,9 +166,51 @@ const CreateForm = () => {
 
   const handleSelectType = (type) => {
     const newQuestions = [...questions];
-    newQuestions[currentQuestionIndex].type = type;
+    if (type === 'rating') {
+      const list_id = generateRandomId();
+      newQuestions[currentQuestionIndex] = {
+        type: 'rating',
+        name: '',
+        label: '',
+        required: false,
+        list_id: list_id,
+        options: ['Option 1', 'Option 2'],
+        subQuestions: [
+          {
+            index: 0,
+            type: `select_one ${list_id}`,
+            name: '',
+            label: '',
+            required: false,
+            appearance: 'list-nolabel',
+            options: ['Option 1', 'Option 2'],
+            constraint: ''
+          },
+          {
+            index: 1,
+            type: `select_one ${list_id}`,
+            name: '',
+            label: '',
+            required: false,
+            appearance: 'list-nolabel',
+            options: ['Option 1', 'Option 2'],
+            constraint: '${_2nd_choice} != ${_1st_choice}'
+          }
+        ],
+        constraint_message: 'Items cannot be selected more than once'
+      };
+    } else {
+      newQuestions[currentQuestionIndex].type = type;
+    }
     setQuestions(newQuestions);
     setShowModal(false);
+  };
+
+  const getOrdinalSuffix = (n) => {
+    if (n === 1) return 'st';
+    if (n === 2) return 'nd';
+    if (n === 3) return 'rd';
+    return 'th';
   };
 
   return (
