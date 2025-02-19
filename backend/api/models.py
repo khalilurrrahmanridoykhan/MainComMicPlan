@@ -20,7 +20,8 @@ class Project(models.Model):
 class Form(models.Model):
     project = models.ForeignKey(Project, related_name='forms', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    # Add other form fields here
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class Submission(models.Model):
     form = models.ForeignKey(Form, related_name='submissions', on_delete=models.CASCADE)
@@ -31,10 +32,8 @@ class FormAccess(models.Model):
     project = models.ForeignKey(Project, related_name='form_access', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     access_level = models.CharField(max_length=50)
-    # Add other access fields here
 
 class Setting(models.Model):
     project = models.ForeignKey(Project, related_name='project_settings', on_delete=models.CASCADE)
     key = models.CharField(max_length=100)
     value = models.CharField(max_length=100)
-    # Add other settings fields here

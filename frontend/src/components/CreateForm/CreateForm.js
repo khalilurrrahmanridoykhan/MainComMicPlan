@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Question from './Question';
 import QuestionTypeModal from './QuestionTypeModal';
 
 const CreateForm = () => {
+  const { projectId } = useParams(); // Retrieve projectId from URL parameters
   const location = useLocation();
-  const { projectId } = location.state || {};
   const [name, setName] = useState('');
   const [questions, setQuestions] = useState([{ id: '1', type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   const [showModal, setShowModal] = useState(false);

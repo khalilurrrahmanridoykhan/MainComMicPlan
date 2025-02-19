@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const FormList = () => {
+const FormsList = () => {
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const [forms, setForms] = useState([]);
   const [projectName, setProjectName] = useState('');
 
@@ -16,9 +17,11 @@ const FormList = () => {
             'Authorization': `Token ${token}`
           }
         });
-        setForms(response.data);
+        console.log('API Response:', response.data); // Debugging: Log the API response
+        setForms(response.data || []);
       } catch (error) {
         console.error('Error fetching forms:', error);
+        setForms([]); // Ensure forms is always an array
       }
     };
 
@@ -40,18 +43,49 @@ const FormList = () => {
     fetchProject();
   }, [projectId]);
 
+  const handleCreateForm = () => {
+    navigate(`/projects/${projectId}/create_form`);
+  };
+
   return (
     <div className="container mt-5">
-      <h2>Forms for Project: {projectName}</h2>
-      <ul className="list-group">
-        {forms.map((form) => (
-          <li key={form.id} className="list-group-item">
-            {form.name}
-          </li>
-        ))}
-      </ul>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>Forms for Project: {projectName}</h2>
+        <button className="btn btn-primary" onClick={handleCreateForm}>Create Form</button>
+      </div>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Form Name</th>
+            <th>Project Name</th>
+            <th>Updated At</th>
+            <th>Created At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {forms.length > 0 ? (
+            forms.map((form) => (
+              <tr key={form.id}>
+                <td>{form.name}</td>
+                <td>{projectName}</td>
+                <td>{new Date(form.updated_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>
+                <td>{new Date(form.created_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>
+                <td>
+                  <button className="btn btn-primary btn-sm">Edit</button>
+                  <button className="btn btn-danger btn-sm ml-2">Delete</button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" className="text-center">No forms available</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export default FormList;
+export default FormsList;
