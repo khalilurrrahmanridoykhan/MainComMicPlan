@@ -25,7 +25,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'summary', 'form', 'data', 'settings', 'forms', 'form_access', 'project_settings', 'created_by']
+        fields = ['id', 'name', 'description', 'summary', 'form', 'data', 'settings', 'report', 'data_table', 'map', 'microplaning', 'user', 'forms', 'form_access', 'project_settings', 'created_by']
 
 class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:

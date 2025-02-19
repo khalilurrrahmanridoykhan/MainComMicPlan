@@ -10,6 +10,7 @@ import Dashboard from './Dashboard';
 import Submissions from './Submissions';
 import EditProject from './EditProject';
 import CreateForm from './components/CreateForm/CreateForm';
+import FormList from './components/FormsList';
 
 const App = () => {
   const [authToken, setAuthToken] = useState(sessionStorage.getItem('authToken'));
@@ -28,7 +29,8 @@ const App = () => {
           <Route path="projects/all" element={<AllProjects />} />
           <Route path="projects/create" element={<CreateProject />} />
           <Route path="projects/edit/:projectId" element={<EditProject />} />
-          <Route path="projects/:projectId/create_form" element={<CreateForm />} /> {/* Add the create form route */}
+          <Route path="projects/:projectId/forms" element={<FormList />} />
+          <Route path="projects/:projectId/create_form" element={<CreateForm />} />
           <Route path="forms" element={<Forms />} />
           <Route path="submissions" element={<Submissions />} />
         </Route>

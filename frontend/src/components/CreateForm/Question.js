@@ -111,6 +111,26 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
                 <option value="annotate">Annotate</option>
                 <option value="other">Other</option>
               </Form.Select>
+            ) : question.type === 'file' ? (
+              <>
+                <input
+                  type="text"
+                  className="form-control mb-2"
+                  value={question.appearance}
+                  onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}
+                  placeholder="Enter appearance"
+                />
+                <div className="mb-3">
+                  <label className="form-label">Accepted files:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={question.accepted_files || ''}
+                    onChange={(e) => handleQuestionChange(index, 'accepted_files', e.target.value)}
+                    placeholder='e.g. ".pdf,.doc,.odt"'
+                  />
+                </div>
+              </>
             ) : (
               <input
                 type="text"
