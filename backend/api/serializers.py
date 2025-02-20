@@ -5,7 +5,7 @@ from .models import Project, Form, FormAccess, Setting, Submission
 class FormSerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
-        fields = '__all__'
+        fields = ['id', 'project', 'name', 'questions']  # Include the questions field
 
 class FormAccessSerializer(serializers.ModelSerializer):
     class Meta:

@@ -47,6 +47,24 @@ const FormsList = () => {
     navigate(`/projects/${projectId}/create_form`);
   };
 
+  const handleEditForm = (formId) => {
+    navigate(`/projects/${projectId}/edit_form/${formId}`);
+  };
+
+  const handleDeleteForm = async (formId) => {
+    try {
+      const token = sessionStorage.getItem('authToken');
+      await axios.delete(`http://localhost:8000/api/forms/${formId}/`, {
+        headers: {
+          'Authorization': `Token ${token}`
+        }
+      });
+      setForms(forms.filter((form) => form.id !== formId));
+    } catch (error) {
+      console.error('Error deleting form:', error);
+    }
+  };
+
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -72,8 +90,8 @@ const FormsList = () => {
                 <td>{new Date(form.updated_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>
                 <td>{new Date(form.created_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>
                 <td>
-                  <button className="btn btn-primary btn-sm">Edit</button>
-                  <button className="btn btn-danger btn-sm ml-2">Delete</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleEditForm(form.id)}>Edit</button>
+                  <button className="btn btn-danger btn-sm ml-2" onClick={() => handleDeleteForm(form.id)}>Delete</button>
                 </td>
               </tr>
             ))

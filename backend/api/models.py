@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import JSONField
 
 class Project(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     description = models.TextField()
     summary = models.TextField(null=True, blank=True)
     form = models.JSONField(null=True, blank=True)
@@ -15,13 +16,20 @@ class Project(models.Model):
     user = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, related_name='projects', on_delete=models.CASCADE)
+    created_by = models.ForeignKey('auth.User', related_name='projects', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
 class Form(models.Model):
-    project = models.ForeignKey(Project, related_name='forms', on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='forms')  # Set related_name to 'forms'
+    name = models.CharField(max_length=255)
+    questions = models.JSONField(default=list)  # Use django.db.models.JSONField
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class Submission(models.Model):
     form = models.ForeignKey(Form, related_name='submissions', on_delete=models.CASCADE)
