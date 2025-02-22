@@ -65,6 +65,10 @@ const FormsList = () => {
     }
   };
 
+  const handleViewFormInfo = (formId) => {
+    navigate(`/projects/${projectId}/forms/${formId}`);
+  };
+
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -85,7 +89,11 @@ const FormsList = () => {
           {forms.length > 0 ? (
             forms.map((form) => (
               <tr key={form.id}>
-                <td>{form.name}</td>
+                <td>
+                  <button className="btn btn-link" onClick={() => handleViewFormInfo(form.id)}>
+                    {form.name}
+                  </button>
+                </td>
                 <td>{projectName}</td>
                 <td>{new Date(form.updated_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>
                 <td>{new Date(form.created_at).toLocaleString('en-US', { timeZone: 'UTC' })}</td>

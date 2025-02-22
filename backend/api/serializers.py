@@ -1,11 +1,41 @@
 from django.contrib.auth.models import User
-from rest_framework import serializers
-from .models import Project, Form, FormAccess, Setting, Submission
+from rest_framework import serializers, viewsets, status
+from rest_framework.response import Response
+from .models import Project, Form, FormAccess, Setting, Submission, Language
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = '__all__'
 
 class FormSerializer(serializers.ModelSerializer):
+    default_language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all(), allow_null=True, required=False)
+    other_languages = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all(), many=True, required=False)
+
     class Meta:
         model = Form
-        fields = ['id', 'project', 'name', 'questions']  # Include the questions field
+        fields = '__all__'
+
+class FormViewSet(viewsets.ModelViewSet):
+    queryset = Form.objects.all()
+    serializer_class = FormSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Handle default_language
+        default_language = request.data.get('default_language')
+
+        if default_language:
+            instance.default_language_id = default_language
+
+        instance.save()
+
+        return Response(serializer.data)
 
 class FormAccessSerializer(serializers.ModelSerializer):
     class Meta:

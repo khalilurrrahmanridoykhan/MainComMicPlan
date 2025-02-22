@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, status
-from .models import Form, Submission, Project
-from .serializers import FormSerializer, SubmissionSerializer, ProjectSerializer, UserSerializer
+from .models import Form, Submission, Project, Language
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -30,15 +29,40 @@ def sanitize_name(name):
 
 class FormViewSet(viewsets.ModelViewSet):
     queryset = Form.objects.all()
-    serializer_class = FormSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import FormSerializer
+        return FormSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Handle default_language
+        default_language = request.data.get('default_language')
+
+        if default_language:
+            instance.default_language_id = default_language
+
+        instance.save()
+
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def create_form(self, request, pk=None):
         project = Project.objects.get(pk=pk)
         form_name = request.data.get('name')
         questions = request.data.get('questions', [])  # Get questions from the request data
-        form = Form.objects.create(project=project, name=form_name, questions=questions)  # Save questions
+        default_language = request.data.get('default_language')
+        other_languages = request.data.get('other_languages', [])
+
+        form = Form.objects.create(project=project, name=form_name, questions=questions, default_language_id=default_language)  # Save questions
+
+        if other_languages:
+            form.other_languages.set(other_languages)
 
         # Create a new workbook and add the survey and settings sheets
         wb = openpyxl.Workbook()
@@ -249,13 +273,17 @@ class FormViewSet(viewsets.ModelViewSet):
 
 class SubmissionViewSet(viewsets.ModelViewSet):
     queryset = Submission.objects.all()
-    serializer_class = SubmissionSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import SubmissionSerializer
+        return SubmissionSerializer
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import ProjectSerializer
+        return ProjectSerializer
 
     def get_queryset(self):
         return Project.objects.filter(created_by=self.request.user)
@@ -267,7 +295,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def forms(self, request, pk=None):
         project = self.get_object()
         forms = Form.objects.filter(project=project)
-        serializer = FormSerializer(forms, many=True)
+        serializer = self.get_serializer(forms, many=True)
         return Response(serializer.data)
 
 class CustomAuthToken(APIView):
@@ -286,8 +314,17 @@ class RegisterUser(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        from .serializers import UserSerializer
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LanguageViewSet(viewsets.ModelViewSet):
+    queryset = Language.objects.all()
+
+    def get_serializer_class(self):
+        from .serializers import LanguageSerializer
+        return LanguageSerializer
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this view

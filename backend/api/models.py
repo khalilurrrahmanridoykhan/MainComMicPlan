@@ -16,7 +16,7 @@ class Project(models.Model):
     user = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey('auth.User', related_name='projects', on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name='projects', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -24,9 +24,12 @@ class Project(models.Model):
 class Form(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='forms')  # Set related_name to 'forms'
     name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)  # Add this line
     questions = models.JSONField(default=list)  # Use django.db.models.JSONField
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    default_language = models.ForeignKey('Language', null=True, blank=True, on_delete=models.SET_NULL, related_name='default_forms')
+    other_languages = models.ManyToManyField('Language', blank=True, related_name='other_forms')
 
     def __str__(self):
         return self.name
@@ -45,3 +48,13 @@ class Setting(models.Model):
     project = models.ForeignKey(Project, related_name='project_settings', on_delete=models.CASCADE)
     key = models.CharField(max_length=100)
     value = models.CharField(max_length=100)
+
+class Language(models.Model):
+    subtag = models.CharField(max_length=10, unique=True)
+    type = models.CharField(max_length=50)
+    description = models.TextField()
+    added = models.DateField()
+    deprecated = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.subtag
