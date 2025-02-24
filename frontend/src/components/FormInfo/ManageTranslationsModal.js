@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
+import UpdateTranslationsModal from './UpdateTranslationsModal';
 
 const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
   const [languages, setLanguages] = useState([]);
@@ -11,6 +12,7 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
   const [showOtherLanguagesForm, setShowOtherLanguagesForm] = useState(false);
   const [showEditDefaultLanguageForm, setShowEditDefaultLanguageForm] = useState(false);
   const [showEditOtherLanguagesForm, setShowEditOtherLanguagesForm] = useState(false);
+  const [showUpdateTranslationsModal, setShowUpdateTranslationsModal] = useState(false);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -80,7 +82,8 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
       const token = sessionStorage.getItem('authToken');
       const payload = {
         ...formDetails,
-        default_language: defaultLanguage
+        default_language: defaultLanguage,
+        update_default_language: true // Add this flag to indicate updating default language
       };
       console.log('Request Payload:', payload); // Log the request payload
       await axios.put(`http://localhost:8000/api/forms/${formId}/`, payload, {
@@ -130,70 +133,81 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
   const availableOtherLanguages = languages.filter(language => language.id !== parseInt(defaultLanguage));
 
   return (
-    <Modal show={show} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>Manage Translations</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <p>Please name your default language before adding languages and translations.</p>
-        {selectedDefaultLanguage && (
-          <p>
-            The default Language: {selectedDefaultLanguage.description} ({selectedDefaultLanguage.subtag})
-          </p>
-        )}
-        {defaultLanguage && !showEditDefaultLanguageForm ? (
-          <Button variant="secondary" onClick={() => setShowEditDefaultLanguageForm(true)}>Edit Default Language</Button>
-        ) : (
-          <Form>
-            <Form.Group controlId="defaultLanguage">
-              <Form.Label>Default Language Name</Form.Label>
-              <Form.Control as="select" value={defaultLanguage} onChange={handleLanguageChange}>
-                <option value="">Select Language</option>
-                {languages.map((language) => (
-                  <option key={language.id} value={language.id}>{language.description}</option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Form.Group controlId="defaultLanguageCode">
-              <Form.Label>Default Language Code</Form.Label>
-              <Form.Control as="select" value={defaultLanguageCode} onChange={handleLanguageCodeChange}>
-                <option value="">Select Language Code</option>
-                {languages.map((language) => (
-                  <option key={language.id} value={language.subtag}>{language.subtag}</option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Button variant="primary" onClick={handleSaveDefaultLanguage}>Save Default Language</Button>
-          </Form>
-        )}
-        <hr />
-        {selectedOtherLanguages.length > 0 ? (
-          <p>
-            Other Languages: {selectedOtherLanguages.map(lang => `${lang.description} (${lang.subtag})`).join(', ')}
-          </p>
-        ) : (
-          <p>Other Languages:</p>
-        )}
-        {otherLanguages.length > 0 && !showEditOtherLanguagesForm ? (
-          <Button variant="secondary" onClick={() => setShowEditOtherLanguagesForm(true)}>Edit Other Languages</Button>
-        ) : (
-          <Form>
-            <Form.Group controlId="otherLanguages">
-              <Form.Label>Other Languages</Form.Label>
-              <Form.Control as="select" multiple value={otherLanguages} onChange={handleOtherLanguagesChange}>
-                {availableOtherLanguages.map((language) => (
-                  <option key={language.id} value={language.id}>{language.description}</option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Button variant="primary" onClick={handleSaveOtherLanguages}>Save Other Languages</Button>
-          </Form>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>Close</Button>
-      </Modal.Footer>
-    </Modal>
+    <>
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Manage Translations</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Please name your default language before adding languages and translations.</p>
+          {selectedDefaultLanguage && (
+            <p>
+              The default Language: {selectedDefaultLanguage.description} ({selectedDefaultLanguage.subtag})
+            </p>
+          )}
+          {defaultLanguage && !showEditDefaultLanguageForm ? (
+            <Button variant="secondary" onClick={() => setShowEditDefaultLanguageForm(true)}>Edit Default Language</Button>
+          ) : (
+            <Form>
+              <Form.Group controlId="defaultLanguage">
+                <Form.Label>Default Language Name</Form.Label>
+                <Form.Control as="select" value={defaultLanguage} onChange={handleLanguageChange}>
+                  <option value="">Select Language</option>
+                  {languages.map((language) => (
+                    <option key={language.id} value={language.id}>{language.description}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+              <Form.Group controlId="defaultLanguageCode">
+                <Form.Label>Default Language Code</Form.Label>
+                <Form.Control as="select" value={defaultLanguageCode} onChange={handleLanguageCodeChange}>
+                  <option value="">Select Language Code</option>
+                  {languages.map((language) => (
+                    <option key={language.id} value={language.subtag}>{language.subtag}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+              <Button variant="primary" onClick={handleSaveDefaultLanguage}>Save Default Language</Button>
+            </Form>
+          )}
+          <hr />
+          {selectedOtherLanguages.length > 0 ? (
+            <p>
+              Other Languages: {selectedOtherLanguages.map(lang => `${lang.description} (${lang.subtag})`).join(', ')}
+            </p>
+          ) : (
+            <p>Other Languages:</p>
+          )}
+          {otherLanguages.length > 0 && !showEditOtherLanguagesForm ? (
+            <Button variant="secondary" onClick={() => setShowEditOtherLanguagesForm(true)}>Edit Other Languages</Button>
+          ) : (
+            <Form>
+              <Form.Group controlId="otherLanguages">
+                <Form.Label>Other Languages</Form.Label>
+                <Form.Control as="select" multiple value={otherLanguages} onChange={handleOtherLanguagesChange}>
+                  {availableOtherLanguages.map((language) => (
+                    <option key={language.id} value={language.id}>{language.description}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+              <Button variant="primary" onClick={handleSaveOtherLanguages}>Save Other Languages</Button>
+            </Form>
+          )}
+          <hr />
+          <Button variant="primary" onClick={() => setShowUpdateTranslationsModal(true)}>Update Default Translation</Button>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>Close</Button>
+        </Modal.Footer>
+      </Modal>
+      <UpdateTranslationsModal
+        show={showUpdateTranslationsModal}
+        onHide={() => setShowUpdateTranslationsModal(false)}
+        formId={formId}
+        defaultLanguageDescription={selectedDefaultLanguage?.description}
+        defaultLanguageSubtag={selectedDefaultLanguage?.subtag}
+      />
+    </>
   );
 };
 
