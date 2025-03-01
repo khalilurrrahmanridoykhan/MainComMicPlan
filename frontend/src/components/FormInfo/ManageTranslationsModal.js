@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 import UpdateTranslationsModal from './UpdateTranslationsModal';
+import UpdateOtherTranslationsModal from './UpdateOtherTranslationsModal';
 
 const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
   const [languages, setLanguages] = useState([]);
@@ -13,6 +14,8 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
   const [showEditDefaultLanguageForm, setShowEditDefaultLanguageForm] = useState(false);
   const [showEditOtherLanguagesForm, setShowEditOtherLanguagesForm] = useState(false);
   const [showUpdateTranslationsModal, setShowUpdateTranslationsModal] = useState(false);
+  const [showUpdateOtherTranslationsModal, setShowUpdateOtherTranslationsModal] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -104,6 +107,7 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
       const token = sessionStorage.getItem('authToken');
       const payload = {
         ...formDetails,
+        default_language: defaultLanguage, // Ensure default_language is included in the payload
         other_languages: otherLanguages
       };
       console.log('Request Payload:', payload); // Log the request payload
@@ -124,6 +128,15 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
     onHide();
     setShowEditDefaultLanguageForm(false); // Reset the form visibility when modal is closed
     setShowEditOtherLanguagesForm(false); // Reset the form visibility when modal is closed
+  };
+
+  const handleUpdateTranslations = (language) => {
+    setSelectedLanguage(language);
+    if (language.id === parseInt(defaultLanguage)) {
+      setShowUpdateTranslationsModal(true);
+    } else {
+      setShowUpdateOtherTranslationsModal(true);
+    }
   };
 
   const selectedDefaultLanguage = languages.find(language => language.id === parseInt(defaultLanguage));
@@ -194,19 +207,39 @@ const ManageTranslationsModal = ({ show, onHide, formId, onSave }) => {
             </Form>
           )}
           <hr />
-          <Button variant="primary" onClick={() => setShowUpdateTranslationsModal(true)}>Update Default Translation</Button>
+          <Button variant="primary" onClick={() => handleUpdateTranslations(selectedDefaultLanguage)}>
+            Update Default Translation
+          </Button>
+          {selectedOtherLanguages.map((language) => (
+            <div key={language.id}>
+              <Button variant="primary" onClick={() => handleUpdateTranslations(language)}>
+                Update Translation for {language.description} ({language.subtag})
+              </Button>
+            </div>
+          ))}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>Close</Button>
         </Modal.Footer>
       </Modal>
-      <UpdateTranslationsModal
-        show={showUpdateTranslationsModal}
-        onHide={() => setShowUpdateTranslationsModal(false)}
-        formId={formId}
-        defaultLanguageDescription={selectedDefaultLanguage?.description}
-        defaultLanguageSubtag={selectedDefaultLanguage?.subtag}
-      />
+      {selectedLanguage && (
+        <>
+          <UpdateTranslationsModal
+            show={showUpdateTranslationsModal}
+            onHide={() => setShowUpdateTranslationsModal(false)}
+            formId={formId}
+            defaultLanguageDescription={selectedLanguage.description}
+            defaultLanguageSubtag={selectedLanguage.subtag}
+          />
+          <UpdateOtherTranslationsModal
+            show={showUpdateOtherTranslationsModal}
+            onHide={() => setShowUpdateOtherTranslationsModal(false)}
+            formId={formId}
+            languageDescription={selectedLanguage.description}
+            languageSubtag={selectedLanguage.subtag}
+          />
+        </>
+      )}
     </>
   );
 };

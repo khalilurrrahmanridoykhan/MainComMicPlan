@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Form } from 'react-bootstrap';
 import axios from 'axios';
 
-const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescription, defaultLanguageSubtag }) => {
+const UpdateOtherTranslationsModal = ({ show, onHide, formId, languageDescription, languageSubtag }) => {
   const [labels, setLabels] = useState([]);
   const [updatedTranslations, setUpdatedTranslations] = useState({});
 
@@ -19,10 +19,10 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
         const extractedLabels = [];
 
         formDetails.questions.forEach((question) => {
-          extractedLabels.push({ original: question.label, updated: question.translations?.[defaultLanguageDescription] || question.label });
+          extractedLabels.push({ original: question.label, updated: question.translations?.[languageDescription] || question.label });
           if (question.subQuestions) {
             question.subQuestions.forEach((subQuestion) => {
-              extractedLabels.push({ original: subQuestion.label, updated: subQuestion.translations?.[defaultLanguageDescription] || subQuestion.label });
+              extractedLabels.push({ original: subQuestion.label, updated: subQuestion.translations?.[languageDescription] || subQuestion.label });
             });
           }
         });
@@ -36,7 +36,7 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
     if (show) {
       fetchFormDetails();
     }
-  }, [show, formId, defaultLanguageDescription]);
+  }, [show, formId, languageDescription]);
 
   const handleTranslationChange = (original, value) => {
     setUpdatedTranslations((prev) => ({
@@ -57,21 +57,13 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
       });
       const formDetails = formResponse.data;
 
-      formDetails.questions.forEach((question) => {
-        if (updatedTranslations[question.label]) {
-          question.label = updatedTranslations[question.label];
-        }
-        if (question.subQuestions) {
-          question.subQuestions.forEach((subQuestion) => {
-            if (updatedTranslations[subQuestion.label]) {
-              subQuestion.label = updatedTranslations[subQuestion.label];
-            }
-          });
-        }
-      });
+      // Update the translations field for other languages
+      const translationsPayload = {
+        translations: updatedTranslations,
+        language_subtag: languageSubtag
+      };
 
-      // Update the form with the new labels
-      await axios.put(`http://localhost:8000/api/forms/${formId}/`, formDetails, {
+      await axios.put(`http://localhost:8000/api/forms/${formId}/translations/`, translationsPayload, {
         headers: {
           'Authorization': `Token ${token}`
         }
@@ -86,14 +78,14 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
   return (
     <Modal show={show} onHide={onHide}>
       <Modal.Header closeButton>
-        <Modal.Title>Update Translations</Modal.Title>
+        <Modal.Title>Update other Translations for {languageDescription}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Table striped bordered hover>
           <thead>
             <tr>
               <th>Original String</th>
-              <th>{defaultLanguageDescription} Updated Text</th>
+              <th>{languageDescription} Updated Text</th>
             </tr>
           </thead>
           <tbody>
@@ -103,7 +95,7 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
                 <td>
                   <Form.Control
                     type="text"
-                    value={updatedTranslations[label.original] || label.updated}
+                    value={updatedTranslations[label.original] !== undefined ? updatedTranslations[label.original] : label.updated}
                     onChange={(e) => handleTranslationChange(label.original, e.target.value)}
                   />
                 </td>
@@ -120,4 +112,4 @@ const UpdateTranslationsModal = ({ show, onHide, formId, defaultLanguageDescript
   );
 };
 
-export default UpdateTranslationsModal;
+export default UpdateOtherTranslationsModal;

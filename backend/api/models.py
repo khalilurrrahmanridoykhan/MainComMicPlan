@@ -30,7 +30,7 @@ class Form(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     default_language = models.ForeignKey('Language', null=True, blank=True, on_delete=models.SET_NULL, related_name='default_forms')
     other_languages = models.ManyToManyField('Language', blank=True, related_name='other_forms')
-
+    translations = models.JSONField(default=dict, blank=True)
     def __str__(self):
         return self.name
 
