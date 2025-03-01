@@ -62,7 +62,7 @@ const CreateForm = () => {
 
   const handleOptionChange = (questionIndex, optionIndex, value) => {
     const newQuestions = [...questions];
-    newQuestions[questionIndex].options[optionIndex] = value;
+    newQuestions[questionIndex].options[optionIndex].label = value;
     setQuestions(newQuestions);
   };
 
@@ -199,7 +199,21 @@ const CreateForm = () => {
         ],
         constraint_message: 'Items cannot be selected more than once'
       };
-    } else {
+    }else if (type === 'select_one') {
+      const randomId = generateRandomId(7);
+      newQuestions[currentQuestionIndex] = {
+        type: `select_one ${randomId}`,
+        name: '',
+        label: '',
+        required: false,
+        options: [
+          { name: 'option_1', label: 'Option 1' },
+          { name: 'option_2', label: 'Option 2' }
+        ],
+        subQuestions: []
+      };
+    }
+    else {
       newQuestions[currentQuestionIndex].type = type;
     }
     setQuestions(newQuestions);

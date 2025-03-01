@@ -6,7 +6,7 @@ const Option = ({ option, onChange, index }) => {
       <input
         type="text"
         className="form-control"
-        value={option}
+        value={option.label}
         onChange={(e) => onChange(index, e.target.value)}
         placeholder={`Option ${index + 1}`}
       />
