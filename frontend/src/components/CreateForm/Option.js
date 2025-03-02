@@ -1,14 +1,21 @@
 import React from 'react';
 
-const Option = ({ option, onChange, index }) => {
+const Option = ({ option, index, onChange }) => {
+  const handleLabelChange = (e) => {
+    const label = e.target.value;
+    const name = label.toLowerCase().replace(/[^a-z0-9-._:]/g, '_');
+    onChange(index, 'label', label);
+    onChange(index, 'name', name);
+  };
+
   return (
     <div className="mb-2">
       <input
         type="text"
-        className="form-control"
+        className="form-control mb-2"
         value={option.label}
-        onChange={(e) => onChange(index, e.target.value)}
-        placeholder={`Option ${index + 1}`}
+        onChange={handleLabelChange}
+        placeholder="Option Label"
       />
     </div>
   );

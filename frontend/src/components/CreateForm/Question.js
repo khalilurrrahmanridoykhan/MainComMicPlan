@@ -70,7 +70,7 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
                 <option value="numbers">Numbers</option>
                 <option value="other">Other</option>
               </Form.Select>
-            ) : question.type === 'select_one' ? (
+            ) : question.type.startsWith('select_one') ? (
               <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
                 <option value="select">Select</option>
                 <option value="minimal">Minimal</option>
@@ -85,7 +85,7 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
                 <option value="list-nolabel">List-nolabel</option>
                 <option value="other">Other</option>
               </Form.Select>
-            ) : question.type === 'select_multiple' ? (
+            ) : question.type.startsWith('select_multiple') ? (
               <Form.Select value={question.appearance} onChange={(e) => handleQuestionChange(index, 'appearance', e.target.value)}>
                 <option value="select">Select</option>
                 <option value="minimal">Minimal</option>
@@ -147,14 +147,14 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
               <input
                 type="number"
                 className="form-control"
-                value={question.parameters.split('=')[1] || '1024'}
+                value={question.parameters?.split('=')[1] || '1024'}
                 onChange={(e) => handleQuestionChange(index, 'parameters', `max-pixels=${e.target.value}`)}
                 placeholder="max-pixels"
                 min="1"
               />
             </div>
           )}
-          {(question.type === 'select_one' || question.type === 'select_multiple') && (
+          {(question.type.startsWith('select_one') || question.type.startsWith('select_multiple')) && (
             <>
               <div className="mb-3">
                 <label className="form-label">Parameters:</label>
@@ -162,8 +162,8 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    checked={question.parameters.includes('randomize=true')}
-                    onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${e.target.checked};seed=${question.parameters.split(';')[1]?.split('=')[1] || ''}`)}
+                    checked={question.parameters?.includes('randomize=true') || false}
+                    onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${e.target.checked};seed=${question.parameters?.split(';')[1]?.split('=')[1] || ''}`)}
                   />
                   <label className="form-check-label">Randomize</label>
                 </div>
@@ -173,8 +173,8 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
                 <input
                   type="number"
                   className="form-control"
-                  value={question.parameters.split(';')[1]?.split('=')[1] || ''}
-                  onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${question.parameters.includes('randomize=true')};seed=${e.target.value}`)}
+                  value={question.parameters?.split(';')[1]?.split('=')[1] || ''}
+                  onChange={(e) => handleQuestionChange(index, 'parameters', `randomize=${question.parameters?.includes('randomize=true')};seed=${e.target.value}`)}
                 />
               </div>
             </>
@@ -197,7 +197,7 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
         <div className="mb-3">
           <label className="form-label">Options:</label>
           {question.options.map((option, optionIndex) => (
-            <Option key={optionIndex} option={option} index={optionIndex} onChange={(optionIndex, value) => handleOptionChange(index, optionIndex, value)} />
+            <Option key={optionIndex} option={option} index={optionIndex} onChange={(field, value) => handleOptionChange(index, optionIndex, field, value)} />
           ))}
           <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
         </div>
@@ -206,7 +206,7 @@ const Question = ({ question, index, handleQuestionChange, handleDeleteQuestion,
         <div className="mb-3">
           <label className="form-label">Options:</label>
           {question.options.map((option, optionIndex) => (
-            <Option key={optionIndex} option={option} index={optionIndex} onChange={(optionIndex, value) => handleOptionChange(index, optionIndex, value)} />
+            <Option key={optionIndex} option={option} index={optionIndex} onChange={(field, value) => handleOptionChange(index, optionIndex, field, value)} />
           ))}
           <button type="button" className="btn btn-secondary" onClick={() => handleAddOption(index)}>Add Option</button>
           <label className="form-label">Sub-Questions:</label>

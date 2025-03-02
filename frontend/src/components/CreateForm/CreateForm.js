@@ -9,7 +9,7 @@ const CreateForm = () => {
   const { projectId } = useParams(); // Retrieve projectId from URL parameters
   const location = useLocation();
   const [name, setName] = useState('');
-  const [questions, setQuestions] = useState([{ id: '1', type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
+  const [questions, setQuestions] = useState([{ id: '1', type: 'text', name: '', label: '', required: false, options: [], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   const [showModal, setShowModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [errors, setErrors] = useState({});
@@ -45,7 +45,7 @@ const CreateForm = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { id: `${questions.length + 1}`, type: 'text', name: '', label: '', required: false, options: ['Option 1', 'Option 2'], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
+    setQuestions([...questions, { id: `${questions.length + 1}`, type: 'text', name: '', label: '', required: false, options: [], subQuestions: [], parameters: '', hint: '', default: '', appearance: '', guidance_hint: '', hxl: '' }]);
   };
 
   const handleDeleteQuestion = (index) => {
@@ -56,13 +56,13 @@ const CreateForm = () => {
 
   const handleAddOption = (questionIndex) => {
     const newQuestions = [...questions];
-    newQuestions[questionIndex].options.push('');
+    newQuestions[questionIndex].options.push({ name: '', label: '' });
     setQuestions(newQuestions);
   };
 
-  const handleOptionChange = (questionIndex, optionIndex, value) => {
+  const handleOptionChange = (questionIndex, optionIndex, field, value) => {
     const newQuestions = [...questions];
-    newQuestions[questionIndex].options[optionIndex].label = value;
+    newQuestions[questionIndex].options[optionIndex][field] = value;
     setQuestions(newQuestions);
   };
 
@@ -87,7 +87,7 @@ const CreateForm = () => {
       label: '',
       required: false,
       appearance: 'list-nolabel',
-      options: ['Option 1', 'Option 2'],
+      options: [],
       constraint: constraint
     });
     setQuestions(newQuestions);
@@ -174,7 +174,7 @@ const CreateForm = () => {
         label: '',
         required: false,
         list_id: list_id,
-        options: ['Option 1', 'Option 2'],
+        options: [],
         subQuestions: [
           {
             index: 0,
@@ -183,7 +183,7 @@ const CreateForm = () => {
             label: '',
             required: false,
             appearance: 'list-nolabel',
-            options: ['Option 1', 'Option 2'],
+            options: [],
             constraint: ''
           },
           {
@@ -193,13 +193,13 @@ const CreateForm = () => {
             label: '',
             required: false,
             appearance: 'list-nolabel',
-            options: ['Option 1', 'Option 2'],
+            options: [],
             constraint: '${_2nd_choice} != ${_1st_choice}'
           }
         ],
         constraint_message: 'Items cannot be selected more than once'
       };
-    }else if (type === 'select_one') {
+    } else if (type === 'select_one') {
       const randomId = generateRandomId(7);
       newQuestions[currentQuestionIndex] = {
         type: `select_one ${randomId}`,
@@ -207,13 +207,12 @@ const CreateForm = () => {
         label: '',
         required: false,
         options: [
-          { name: 'option_1', label: 'Option 1' },
-          { name: 'option_2', label: 'Option 2' }
+          { name: '', label: '' },
+          { name: '', label: '' }
         ],
         subQuestions: []
       };
-    }
-    else {
+    } else {
       newQuestions[currentQuestionIndex].type = type;
     }
     setQuestions(newQuestions);

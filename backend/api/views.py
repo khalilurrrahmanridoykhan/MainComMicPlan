@@ -13,6 +13,7 @@ import random
 import string
 from django.conf import settings
 import re
+from django.db import transaction
 
 def generate_random_id(length=7):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -77,6 +78,9 @@ class FormViewSet(viewsets.ModelViewSet):
         choices_headers = ['list_name', 'name', 'label']
         choices_ws.append(choices_headers)
 
+        # Add headers to the settings sheet
+        settings_ws.append(['default_language'])
+
         # Add questions to the survey sheet
         for question in questions:
             question_type = question.get('type', 'text')  # Default to 'text' if type is not provided
@@ -98,6 +102,12 @@ class FormViewSet(viewsets.ModelViewSet):
                 row.append(question.get('translations', {}).get(language_description, ''))
                 row.append(question.get('hints', {}).get(language_description, ''))
             survey_ws.append(row)
+
+            # Add options to the choices sheet for select_one type questions
+            if question_type.startswith('select_one'):
+                list_id = question_type.split(' ')[1]
+                for option in question.get('options', []):
+                    choices_ws.append([list_id, option['name'], option['label']])
 
             # Add sub-questions to the survey sheet
             for sub_question in question.get('subQuestions', []):
@@ -122,7 +132,7 @@ class FormViewSet(viewsets.ModelViewSet):
                 survey_ws.append(sub_row)
 
         # Add default_language to the settings sheet if updating default language
-        if update_default_language:
+        if update_default_language and default_language:
             settings_ws.append(['default_language'])
             settings_ws.append([default_language_description])
 
@@ -131,14 +141,15 @@ class FormViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
+    @transaction.atomic
     def create_form(self, request, pk=None):
         project = Project.objects.get(pk=pk)
         form_name = request.data.get('name')
         questions = request.data.get('questions', [])  # Get questions from the request data
-        default_language = request.data.get('default_language')
+        default_language_id = request.data.get('default_language')
         other_languages = request.data.get('other_languages', [])
 
-        form = Form.objects.create(project=project, name=form_name, questions=questions, default_language_id=default_language)  # Save questions
+        form = Form.objects.create(project=project, name=form_name, questions=questions, default_language_id=default_language_id)  # Save questions
 
         if other_languages:
             form.other_languages.set(other_languages)
@@ -156,6 +167,9 @@ class FormViewSet(viewsets.ModelViewSet):
         # Add headers to the choices sheet
         choices_ws.append(['list_name', 'name', 'label'])
 
+        # Add headers to the settings sheet
+        settings_ws.append(['default_language'])
+
         # Add questions to the survey sheet
         for question in questions:
             question_type = question.get('type', 'text')  # Default to 'text' if type is not provided
@@ -171,63 +185,47 @@ class FormViewSet(viewsets.ModelViewSet):
             question_constraint_message = question.get('constraint_message', '')
             question_constraint = question.get('constraint', '')
 
-            if question_type == 'rating':
-                # Generate a single list ID for all select_one questions under this rating question
-                list_id = generate_random_id()
+            row = [question_type, question_name, question_label, question_required, question_appearance, question_parameters, question_hint, question_default, question_guidance_hint, question_hxl, question_constraint_message, question_constraint]
+            for language in other_languages:
+                language_description = f"{language.description} ({language.subtag})"
+                row.append(question.get('translations', {}).get(language_description, ''))
+                row.append(question.get('hints', {}).get(language_description, ''))
+            survey_ws.append(row)
 
-                # Add begin_group row
-                survey_ws.append(['begin_group', question_name, '', '', 'field-list', '', '', '', '', '', '', ''])
+            # Add options to the choices sheet for select_one type questions
+            if question_type.startswith('select_one'):
+                list_id = question_type.split(' ')[1]
+                for option in question.get('options', []):
+                    choices_ws.append([list_id, option['name'], option['label']])
 
-                # Add first select_one row with name <user added name>_header
-                survey_ws.append([f'select_one {list_id}', f'{question_name}_header', question_label, '', 'label', '', '', '', '', '', question_constraint_message, question_constraint])
+            # Add sub-questions to the survey sheet
+            for sub_question in question.get('subQuestions', []):
+                sub_question_type = sub_question.get('type', 'text')
+                sub_question_name = sub_question.get('name', '')
+                sub_question_label = sub_question.get('label', '')
+                sub_question_required = sub_question.get('required', False)
+                sub_question_parameters = sub_question.get('parameters', '')
+                sub_question_hint = sub_question.get('hint', '')
+                sub_question_default = sub_question.get('default', '')
+                sub_question_appearance = sub_question.get('appearance', '')
+                sub_question_guidance_hint = sub_question.get('guidance_hint', '')
+                sub_question_hxl = sub_question.get('hxl', '')
+                sub_question_constraint_message = sub_question.get('constraint_message', '')
+                sub_question_constraint = sub_question.get('constraint', '')
 
-                # Add sub-questions
-                for sub_question in question.get('subQuestions', []):
-                    sub_question_name = sub_question['name']
-                    sub_question_label = sub_question['label']
-                    sub_question_required = sub_question['required']
-                    sub_question_appearance = sub_question['appearance']
-                    sub_question_parameters = sub_question.get('parameters', '')
-                    sub_question_constraint_message = question_constraint_message
+                sub_row = [sub_question_type, sub_question_name, sub_question_label, sub_question_required, sub_question_appearance, sub_question_parameters, sub_question_hint, sub_question_default, sub_question_guidance_hint, sub_question_hxl, sub_question_constraint_message, sub_question_constraint]
+                for language in other_languages:
+                    language_description = f"{language.description} ({language.subtag})"
+                    sub_row.append(sub_question.get('translations', {}).get(language_description, ''))
+                    sub_row.append(sub_question.get('hints', {}).get(language_description, ''))
+                survey_ws.append(sub_row)
 
-                    # Ensure the sub-question name starts with an underscore if it starts with a number
-                    if sub_question_label and sub_question_label[0].isdigit():
-                        sub_question_name = f'_{sub_question_name}'
-
-                    # Sanitize the sub-question name
-                    sanitized_sub_question_name = sanitize_name(sub_question_name)
-
-                    # Generate the constraint for the sub-question
-                    sub_question_index = sub_question['index']
-                    sub_question_constraint = ''
-                    for i in range(sub_question_index):
-                        other_sub_question_name = question["subQuestions"][i]["name"]
-                        if question["subQuestions"][i]["label"][0].isdigit():
-                            other_sub_question_name = f'_{other_sub_question_name}'
-                        # Sanitize the other sub-question name
-                        sanitized_other_sub_question_name = sanitize_name(other_sub_question_name)
-                        if sub_question_constraint:
-                            sub_question_constraint += ' and '
-                        sub_question_constraint += f'${{{sanitized_sub_question_name}}} != ${{{sanitized_other_sub_question_name}}}'
-
-                    survey_ws.append([f'select_one {list_id}', sanitized_sub_question_name, sub_question_label, sub_question_required, sub_question_appearance, sub_question_parameters, '', '', '', '', sub_question_constraint_message, sub_question_constraint])
-
-                # Add end_group row
-                survey_ws.append(['end_group', '', '', '', '', '', '', '', '', '', '', ''])
-
-                # Add options to the choices sheet
-                options = question.get('options', ['Option 1', 'Option 2'])
-                for idx, option in enumerate(options):
-                    choices_ws.append([list_id, f'option_{idx + 1}', option])
-            else:
-                if question_type in ['select_one', 'select_multiple']:
-                    list_id = generate_random_id()
-                    question_type = f'{question_type} {list_id}'
-                    options = question.get('options', [])
-                    for idx, option in enumerate(options):
-                        choices_ws.append([list_id, f'option_{idx + 1}', option])
-
-                survey_ws.append([question_type, question_name, question_label, question_required, question_appearance, question_parameters, question_hint, question_default, question_guidance_hint, question_hxl, question_constraint_message, question_constraint])
+        # Add default_language to the settings sheet
+        if default_language_id:
+            default_language = Language.objects.get(id=default_language_id)
+            default_language_description = f"{default_language.description} ({default_language.subtag})"
+            settings_ws.append(['default_language'])
+            settings_ws.append([default_language_description])
 
         # Save the new XLSX file
         output_dir = os.path.join(settings.MEDIA_ROOT, 'update')
@@ -367,11 +365,15 @@ def update_translations(request, form_id):
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f'{form.name}.xlsx')
 
-    wb = openpyxl.Workbook()
-    survey_ws = wb.active
-    survey_ws.title = 'survey'
-    settings_ws = wb.create_sheet(title='settings')
-    choices_ws = wb.create_sheet(title='choices')
+    if os.path.exists(output_path):
+        wb = openpyxl.load_workbook(output_path)
+    else:
+        wb = openpyxl.Workbook()
+
+    if 'survey' in wb.sheetnames:
+        survey_ws = wb['survey']
+        wb.remove(survey_ws)
+    survey_ws = wb.create_sheet(title='survey')
 
     # Add headers to the survey sheet
     survey_headers = ['type', 'name', f'label::{default_language_description}', 'required', 'appearance', 'parameters', f'hint::{default_language_description}', 'default', 'guidance_hint', 'hxl', 'constraint_message', 'constraint']
@@ -380,10 +382,6 @@ def update_translations(request, form_id):
         survey_headers.append(f'label::{language_description}')
         survey_headers.append(f'hint::{language_description}')
     survey_ws.append(survey_headers)
-
-    # Add headers to the choices sheet
-    choices_headers = ['list_name', 'name', 'label']
-    choices_ws.append(choices_headers)
 
     # Add questions to the survey sheet
     for question in form.questions:
@@ -428,6 +426,12 @@ def update_translations(request, form_id):
                 sub_row.append(sub_question.get('translations', {}).get(language_description, ''))
                 sub_row.append(sub_question.get('hints', {}).get(language_description, ''))
             survey_ws.append(sub_row)
+
+    # Add default_language to the settings sheet
+    if default_language:
+        settings_ws = wb['settings']
+        settings_ws.append(['default_language'])
+        settings_ws.append([default_language_description])
 
     wb.save(output_path)
 

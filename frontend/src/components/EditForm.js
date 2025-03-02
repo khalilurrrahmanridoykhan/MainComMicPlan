@@ -126,7 +126,10 @@ const EditForm = () => {
       label: '',
       required: false,
       appearance: 'list-nolabel',
-      options: ['Option 1', 'Option 2'],
+      options: [
+        { name: 'option_1', label: 'Option 1' },
+        { name: 'option_2', label: 'Option 2' }
+      ],
       constraint: constraint
     });
     setForm((prevForm) => ({
